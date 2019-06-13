@@ -24,3 +24,5 @@ This product bundles jna-platform 5.3.1, which is available under a "Apache-2.0"
 This product bundles ini4j 0.5.4, which is available under a "Apache-2.0" License. For details, see http://www.ini4j.org
 
 This product contains ImageInfo.java written by Marco Schmidt, which is in the public domain.
+
+TODO Add missing license information
