@@ -68,6 +68,9 @@ public final class Favicons {
 
 	private static Image loadFaviconImage(File file, int size) {
 		try {
+			if (!file.exists()) {
+				return Icons.getDummyImage(size);
+			}
 			List<BufferedImage> images = ICODecoder.read(file);
 			BufferedImage bestFit = null;
 			for (BufferedImage image : images) {
