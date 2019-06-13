@@ -1,0 +1,11 @@
+#foreach($uploadedFileEntry in $uploadedFiles.groupFilesByFolder($uploadedFiles.files).entrySet())
+#set($titleByFilenames = $titleFilenameParser.getTitleByFilenames($uploadedFileEntry.value))
+#if($titleByFilenames && $titleByFilenames.formattedTitle)
+[SIZE="5"]$titleByFilenames.formattedTitle (${uploadedFileEntry.value.size()}x)[/SIZE]
+#else
+[SIZE="5"]${uploadedFileEntry.key} (${uploadedFileEntry.value.size()}x)[/SIZE]
+#end
+
+#set($files = $uploadedFileEntry.value)
+#parse("includes/files.vm")
+#end

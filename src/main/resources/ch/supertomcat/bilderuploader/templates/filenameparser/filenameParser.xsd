@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<!-- Root Element -->
+	<xs:element name="filenameParser">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Split Filename into parts -->
+				<xs:element name="filenameSplitter" type="FilenameSplitter" />
+				
+				<!-- Parse parts of the filename -->
+				<xs:element name="filenamePartParser" type="FilenamePartParser" minOccurs="0" maxOccurs="unbounded" />
+				
+				<!-- Parse date parts of the filename -->
+				<xs:element name="filenameDatePartParser" type="FilenameDatePartParser" minOccurs="0" maxOccurs="unbounded" />
+				
+				<!-- Optional Formatted Title -->
+				<xs:element name="titleFormatter" type="TitleFormatter" minOccurs="0" maxOccurs="1" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:complexType name="FilenameSplitter">
+		<xs:sequence>
+			<!-- Pattern for split filename -->
+			<xs:element name="pattern" type="xs:string" />
+			<!-- Replacements for storing parts of the filename to variables -->
+			<xs:element name="variableReplacement" type="VariableReplacement" minOccurs="1" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="VariableReplacement">
+		<!-- Variable Name -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
+		<!-- Replacement -->
+		<xs:attribute name="replacement" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="FilenamePartParser">
+		<xs:sequence>
+			<!-- Regex Replace for part of the filename -->
+			<xs:element name="patternReplacement" type="PatternReplacement" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<!-- Variable name (as stored by FilenameSplitter) -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
+		<!-- Output Variable name (If not set, then variableName will be used and overwritten) -->
+		<xs:attribute name="outputVariableName" type="xs:string" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="PatternReplacement">
+		<!-- Pattern -->
+		<xs:attribute name="pattern" type="xs:string" use="required" />
+		<!-- Replacement -->
+		<xs:attribute name="replacement" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="FilenameDatePartParser">
+		<xs:sequence>
+			<!-- Date Parsers (First on the successfully parse a date will be used as result) -->
+			<xs:element name="dateParser" type="DateParser" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<!-- Variable name (as stored by FilenameSplitter) -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
+		<!-- Output Variable name (If not set, then variableName will be used and overwritten) -->
+		<xs:attribute name="outputVariableName" type="xs:string" use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="DateParser">
+		<xs:sequence>
+			<!-- Date Pattern -->
+			<xs:element name="datePattern" type="xs:string" />
+			<!-- Date Format -->
+			<xs:element name="dateFormat" type="xs:string" />
+			<!-- Locale (Is needed when date format is locale specific) -->
+			<xs:element name="dateLocale" type="xs:string" minOccurs="0" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="TitleFormatter">
+		<xs:sequence>
+			<!-- Format (Variables can be accessed by: ${VariableName}) -->
+			<xs:element name="format" type="xs:string" />
+			<!-- Regex Replace for part of the filename -->
+			<xs:element name="patternReplacement" type="PatternReplacement" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

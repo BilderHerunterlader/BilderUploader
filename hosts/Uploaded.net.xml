@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hoster name="Uploaded" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+	<displayName>Uploaded.net</displayName>
+	<displayIcon>uploaded.net.ico</displayIcon>
+	<homePage>https://uploaded.net/</homePage>
+
+	<maxConnections>1</maxConnections>
+
+	<generateRandom>
+		<className>UploadedNetRandomGenerator</className>
+		<param key="len" value="6" />
+		<variableName>AdminCode</variableName>
+	</generateRandom>
+
+	<prepareUploadStep>
+		<url>https://uploaded.net/io/login</url>
+		<httpMethod>POST</httpMethod>
+		<additionalField fieldName="id" fieldValue="${Username}" />
+		<additionalField fieldName="pw" fieldValue="${Password}" />
+	</prepareUploadStep>
+	
+	<prepareUploadStep>
+		<url>https://uploaded.net/</url>
+		<regex>
+			<pattern>&lt;input type=&quot;hidden&quot; id=&quot;user_id&quot; value=&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="UserID" replacement="$1" />
+		</regex>
+		<regex>
+			<pattern>&lt;input type=&quot;hidden&quot; id=&quot;user_pw&quot; value=&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="UserPW" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+	
+	<prepareUploadStep>
+		<url>http://uploaded.net/js/script.js</url>
+		<regex>
+			<pattern>uploadServer = &apos;(.+?)&apos;</pattern>
+			<replacementVariable variableName="UploadServer" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+
+	<uploadStep>
+		<url>${UploadServer}upload?admincode=${AdminCode}&amp;id=${UserID}&amp;pw=${UserPW}</url>
+		<fieldName>Filedata</fieldName>
+		<additionalField fieldName="Filename" fieldValue="${FileName}" />
+	</uploadStep>
+	
+	<uploadResultStep>
+		<regex>
+			<pattern>([^,]+),</pattern>
+			<replacement>[URL]http://uploaded.net/file/$1[/URL]</replacement>
+		</regex>
+	</uploadResultStep>
+	
+	<passwordVariable variableName="Username" />
+	<passwordVariable variableName="Password" encrypted="true" />
+</hoster>

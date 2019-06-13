@@ -1,0 +1,6 @@
+#foreach($uploadedFileGroup in $uploadedFiles.createFileGroups($countPerLine, $files))
+#foreach($uploadedFile in $uploadedFileGroup)
+#parse("includes/file.vm")
+#end
+
+#end

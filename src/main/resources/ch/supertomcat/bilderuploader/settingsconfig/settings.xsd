@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<!-- Root Element -->
+	<xs:element name="settings">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Directories -->
+				<xs:element name="directorySettings" type="DirectorySettings" />
+	
+				<!-- Connection -->
+				<xs:element name="connectionSettings" type="ConnectionSettings" />
+
+				<!-- Uploads -->
+				<xs:element name="uploadSettings" type="UploadSettings" />
+				
+				<!-- GUI -->
+				<xs:element name="guiSettings" type="GUISettings" />
+				
+				<!-- Other Settings -->
+				<xs:element name="backupDbOnStart" type="xs:boolean" default="true" />
+				<xs:element name="logLevel" type="LogLevelSetting" default="INFO" />
+				
+				<!-- Hoster Specific Settings -->
+				<xs:element name="hosterSettings" type="HosterSettings" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Log Level -->
+	<xs:simpleType name="LogLevelSetting" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="TRACE" />
+			<xs:enumeration value="DEBUG" />
+			<xs:enumeration value="INFO" />
+			<xs:enumeration value="WARN" />
+			<xs:enumeration value="ERROR" />
+			<xs:enumeration value="FATAL" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Directory Settings -->
+	<xs:complexType name="DirectorySettings">
+		<xs:sequence>
+			<xs:element name="lastUsedPath" type="xs:string" nillable="true" />
+			<xs:element name="lastUsedImportPath" type="xs:string" nillable="true" />
+			<xs:element name="lastUsedExportPath" type="xs:string" nillable="true" />
+			
+			<xs:element name="generatorOutputSaveDirectory" type="xs:string" nillable="true" />
+			<xs:element name="lastUsedGeneratorOutputSaveDirectory" type="xs:string" nillable="true" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<!-- Connection Settings -->
+	<xs:complexType name="ConnectionSettings">
+		<xs:sequence>
+			<xs:element name="maxConnections" type="xs:int" default="32" />
+			<xs:element name="maxConnectionsPerHost" type="xs:int" default="8" />
+			<xs:element name="connectTimeout" type="xs:int" default="60000" />
+			<xs:element name="socketTimeout" type="xs:int" default="60000" />
+			<xs:element name="connectionRequestTimeout" type="xs:int" default="60000" />
+			<xs:element name="proxy" type="ProxySettings" />
+			<xs:element name="userAgent" type="xs:string" default="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:60.9) Gecko/20100101 Goanna/4.2 Firefox/60.9 PaleMoon/28.5.0" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Proxy Settings -->
+	<xs:complexType name="ProxySettings">
+		<xs:sequence>
+			<xs:element name="mode" type="ProxyMode" default="DIRECT_CONNECTION" />
+			<xs:element name="host" type="xs:string" default="127.0.0.1" />
+			<xs:element name="port" type="xs:int" default="0" />
+			<xs:element name="user" type="xs:string" default="" />
+			<xs:element name="password" type="xs:string" default="" />
+			<xs:element name="auth" type="xs:boolean" default="false" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:simpleType name="ProxyMode" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="DIRECT_CONNECTION" />
+			<xs:enumeration value="PROXY" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Upload Settings -->
+	<xs:complexType name="UploadSettings">
+		<xs:sequence>
+			<xs:element name="uploadedBytes" type="xs:long" default="0" />
+			<xs:element name="uploadedFiles" type="xs:long" default="0" />
+			<xs:element name="saveLogs" type="xs:boolean" default="true" />
+			<xs:element name="maxFailedCount" type="xs:int" default="2" />
+			<xs:element name="autoStartUploads" type="xs:boolean" default="false" />
+			<xs:element name="autoRetryAfterUploadsComplete" type="xs:boolean" default="false" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- GUI Settings -->
+	<xs:complexType name="GUISettings">
+		<xs:sequence>
+			<xs:element name="language" type="xs:string" nillable="true" />
+			<xs:element name="saveTableColumnSizes" type="xs:boolean" default="false" />
+			<xs:element name="saveTableSortOrders" type="xs:boolean" default="false" />
+			
+			<xs:element name="colWidthsQueue" type="xs:string" default="" />
+			<xs:element name="tableSortOrdersQueue" type="xs:string" default="" />
+			
+			<xs:element name="sizeDisplayMode" type="SizeDisplayMode" default="AUTO_CHANGE_SIZE" />
+			<xs:element name="progressDisplayMode" type="ProgressDisplayMode" default="PROGRESSBAR_PERCENT" />
+			<xs:element name="uploadRate" type="xs:boolean" default="true" />
+			<xs:element name="lookAndFeel" type="LookAndFeelSetting" default="LAF_OS" />
+			
+			<xs:element name="uploadsCompleteNotification" type="xs:boolean" default="true" />
+			<xs:element name="uploadsCompleteNotificationSeconds" type="xs:int" default="5" />
+			
+			<xs:element name="selectedHoster" type="xs:string" nillable="true" />
+			<xs:element name="selectedBiWiHoster" type="xs:string" nillable="true" />
+			
+			<xs:element name="selectedMainTemplate" type="xs:string" nillable="true" />
+			<xs:element name="selectedFooterTemplate" type="xs:string" nillable="true" />
+			<xs:element name="titleFilenameParserEnabled" type="xs:boolean" />
+			<xs:element name="titleFilenameParserUseAll" type="xs:boolean" />
+			<xs:element name="selectedTitleFilenameParser" type="xs:string" nillable="true" />
+			
+			<xs:element name="mainWindow" type="WindowSettings" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:simpleType name="SizeDisplayMode" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="AUTO_CHANGE_SIZE" />
+			<xs:enumeration value="ONLY_B" />
+			<xs:enumeration value="ONLY_KIB" />
+			<xs:enumeration value="ONLY_MIB" />
+			<xs:enumeration value="ONLY_GIB" />
+			<xs:enumeration value="ONLY_TIB" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ProgressDisplayMode" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="PROGRESSBAR_PERCENT" />
+			<xs:enumeration value="PROGRESSBAR_SIZE" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="LookAndFeelSetting" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="LAF_DEFAULT" />
+			<xs:enumeration value="LAF_OS" />
+			<xs:enumeration value="LAF_METAL" />
+			<xs:enumeration value="LAF_WINDOWS" />
+			<xs:enumeration value="LAF_WINDOWS_CLASSIC" />
+			<xs:enumeration value="LAF_MOTIF" />
+			<xs:enumeration value="LAF_GTK" />
+			<xs:enumeration value="LAF_MACOS" />
+			<xs:enumeration value="LAF_NIMBUS" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="WindowSettings">
+		<xs:sequence>
+			<xs:element name="width" type="xs:int" default="0" />
+			<xs:element name="height" type="xs:int" default="0" />
+			<xs:element name="x" type="xs:int" default="0" />
+			<xs:element name="y" type="xs:int" default="0" />
+			<xs:element name="state" type="xs:int" default="0" />
+		</xs:sequence>
+		<!-- Required Window Name -->
+		<xs:attribute name="name" type="xs:string" use="required" />
+		<!-- Required Flag if Window Size and Position should be saved -->
+		<xs:attribute name="save" type="xs:boolean" use="required" />
+	</xs:complexType>
+	
+	<!-- Hoster Specific Settings -->
+	<xs:complexType name="HosterSettings">
+		<xs:sequence>
+			<!-- Settings -->
+			<xs:element name="settings" type="CustomSetting" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<!-- Required Hoster Name -->
+		<xs:attribute name="name" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<!-- Custom Setting -->
+	<xs:complexType name="CustomSetting">
+		<xs:sequence>
+			<!-- Required Value -->
+			<xs:element name="value" type="xs:string" />
+		</xs:sequence>
+		<!-- Required Setting Name -->
+		<xs:attribute name="name" type="xs:string" use="required" />
+		<!-- Required Data Type -->
+		<xs:attribute name="dataType" type="xs:string" use="required" />
+	</xs:complexType>
+</xs:schema>

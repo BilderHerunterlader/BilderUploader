@@ -1,0 +1,19 @@
+#set ($message="Hello World")
+#set ($blubname = "Meow")
+== Start of Template ==
+
+Some Text $Test1 $Testtest1
+
+#parse("testInclude.vm")
+
+#if($Test1 == "1234.56")
+-> If Text
+#elseif($Testtest1 == "Bla")
+-> Else if Text
+#else
+-> Else Text
+#end
+
+$blubname
+
+== End of Template ==

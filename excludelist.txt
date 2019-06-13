@@ -1,0 +1,4 @@
+excludelist.txt
+.svn
+.git
+target

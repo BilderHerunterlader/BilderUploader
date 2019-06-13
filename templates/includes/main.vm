@@ -1,0 +1,24 @@
+#if($centerOutput == true)
+[CENTER]
+#end
+
+#if($groupByFolder == true)
+#parse("includes/filesGroupedByFolder.vm")
+#else
+#set($files = $uploadedFiles.files)
+#set($titleByFilenames = $titleFilenameParser.getTitleByFilenames($files))
+#if($titleByFilenames && $titleByFilenames.formattedTitle)
+[SIZE="5"]$titleByFilenames.formattedTitle (${files.size()}x)[/SIZE]
+#else
+[SIZE="5"]${$uploadedFiles.getFirstFolderName()} (${files.size()}x)[/SIZE]
+#end
+
+#parse("includes/files.vm")
+#end
+
+#if($footerTemplate)
+#parse($footerTemplate)
+#end
+#if($centerOutput == true)
+[/CENTER]
+#end

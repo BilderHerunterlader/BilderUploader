@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hoster name="Zippyshare" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+	<displayName>Zippyshare</displayName>
+	<displayIcon>zippyshare.ico</displayIcon>
+	<homePage>https://www.zippyshare.com</homePage>
+
+	<maxConnections>1</maxConnections>
+
+	<prepareUploadStep>
+		<url>https://www.zippyshare.com/</url>
+		<regex>
+			<pattern>&lt;form method=&quot;post&quot;.+?id=&quot;upload_form&quot;.+?action=&quot;https?://(.+?)&quot;&gt;</pattern>
+			<replacementVariable variableName="UploadURL" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+
+	<uploadStep>
+		<url>https://${UploadURL}</url>
+		<fieldName>file</fieldName>
+		<additionalField fieldName="name" fieldValue="${FileName}" />
+		<additionalField fieldName="notprivate" fieldValue="true" />
+		<additionalField fieldName="zipname" fieldValue="" />
+		<additionalField fieldName="ziphash" fieldValue="" />
+		<additionalField fieldName="embPlayerValues" fieldValue="false" />
+	</uploadStep>
+	
+	<uploadResultStep>
+		<regex>
+			<pattern>(?s)&lt;strong&gt;Link:&lt;/strong&gt;.+?&lt;input.+?value=&quot;(https?://.+?\.zippyshare.com.+?)&quot;</pattern>
+			<replacement>[URL]$1[/URL]</replacement>
+		</regex>
+	</uploadResultStep>
+</hoster>

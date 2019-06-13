@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hoster name="ImageBam-Family" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+	<displayName>ImageBam (Family safe)</displayName>
+	<displayIcon>imagebam.ico</displayIcon>
+	<homePage>http://www.imagebam.com</homePage>
+
+	<maxFileSize>10485760</maxFileSize>
+	<fileNameFilter>(?i)\.(?:jpg|jpeg|png|gif)$</fileNameFilter>
+	
+	<maxConnections>6</maxConnections>
+
+	<uploadStep>
+		<url>http://www.imagebam.com/sys/upload/save</url>
+		<fieldName>file[]</fieldName>
+		<additionalField fieldName="content_type" fieldValue="0" />
+		<additionalField fieldName="thumb_size" fieldValue="180" />
+		<additionalField fieldName="thumb_aspect_ratio" fieldValue="resize" />
+		<additionalField fieldName="thumb_file_type" fieldValue="jpg" />
+		<additionalField fieldName="thumb_info" fieldValue="0" />
+		<additionalField fieldName="gallery_options" fieldValue="0" />
+		<failureRegex>
+			<pattern>(?s)&lt;h1&gt;An Error Was Encountered&lt;/h1&gt;.+?&lt;p&gt;Error.+?&lt;/p&gt;.+?&lt;/div&gt;</pattern>
+		</failureRegex>
+		<filenameRegex>
+			<pattern>^(.{0,95}).+?(\.[^.]+)?$</pattern>
+			<replacement>$1$2</replacement>
+		</filenameRegex>
+	</uploadStep>
+	
+	<uploadResultStep>
+		<regex>
+			<pattern>(?ism)&lt;textarea onClick=&quot;this\.select\(\);&quot;.+?&gt;(\[URL=http://www\.imagebam\.com/image/[^\]]+\]\[IMG\]http://[^\[]+\[/IMG\]\[/URL\])</pattern>
+			<replacement>$1</replacement>
+		</regex>
+	</uploadResultStep>
+</hoster>

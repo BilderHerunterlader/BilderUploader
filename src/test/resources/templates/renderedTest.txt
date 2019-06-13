@@ -1,0 +1,14 @@
+== Start of Template ==
+
+Some Text 1234.56 Bla
+
+-> AAA.txt
+-> BBB.txt
+-> CCC.txt
+-> DDD.txt
+
+-> Else if Text
+
+Meow
+
+== End of Template ==

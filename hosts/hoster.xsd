@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<!-- Root Element -->
+	<xs:element name="hoster">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Optional Hoster Display Name -->
+				<xs:element name="displayName" type="xs:string" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Hoster Icon Filename -->
+				<xs:element name="displayIcon" type="xs:string" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Hoster Homepage -->
+				<xs:element name="homePage" type="xs:string" minOccurs="0" maxOccurs="1" />
+				
+				<!-- Optional Max File Size -->
+				<xs:element name="maxFileSize" type="xs:long" minOccurs="0" maxOccurs="1" />
+				<!-- Optinal File Name Filter (Regex) -->
+				<xs:element name="fileNameFilter" type="xs:string" minOccurs="0" maxOccurs="1" />
+				
+				<!-- Optional Max Connections -->
+				<xs:element name="maxConnections" type="xs:int" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Delay in milliseconds -->
+				<xs:element name="delay" type="xs:int" minOccurs="0" maxOccurs="1" />
+				
+				<!-- Optional Steps to generate randoms -->
+				<xs:element ref="generateRandom" minOccurs="0" maxOccurs="unbounded" />
+				
+				<!-- Optional Steps to prepare the Upload (e.g. Login, Extract parameters for Upload) -->
+				<xs:element ref="prepareUploadStep" minOccurs="0" maxOccurs="unbounded" />
+				
+				<!-- Required Upload Step -->
+				<xs:element ref="uploadStep" />
+				
+				<!-- TODO Prepare Result -->
+				
+				<!-- Required Upload Result Step -->
+				<xs:element ref="uploadResultStep" />
+				
+				<!-- Password Variables -->
+				<xs:element name="passwordVariable" type="PasswordVariable" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+			<!-- Required Hoster Name -->
+			<xs:attribute name="name" type="xs:string" use="required" />
+			<!-- Required Hoster Version -->
+			<xs:attribute name="version" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Random Generator -->
+	<xs:element name="generateRandom">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Required Class Name -->
+				<xs:element name="className" type="xs:string" />
+				<xs:element ref="param" minOccurs="0" maxOccurs="unbounded" />
+				<xs:element name="variableName" type="xs:string" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Random Generator Parameter -->
+	<xs:element name="param">
+		<xs:complexType>
+			<!-- Required Key -->
+			<xs:attribute name="key" type="xs:string" use="required" />
+			<!-- Required Value -->
+			<xs:attribute name="value" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Prepare Upload -->
+	<xs:element name="prepareUploadStep">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Required URL -->
+				<xs:element name="url" type="xs:string" />
+				<!-- Optional HTTP Method (Default is GET) -->
+				<xs:element name="httpMethod" type="HTTPMethod" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Form Content Type (Only used when HTTP Method is POST, Default is application/x-www-form-urlencoded) -->
+				<xs:element name="formContentType" type="FormContentType" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Additional Fields (Only used when HTTP Method is POST) -->
+				<xs:element ref="additionalField" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optianol Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
+				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional Regular Expressions which are used on HTTP Response Content -->
+				<xs:element name="regex" type="RegexAndVariableStore" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Upload -->
+	<xs:element name="uploadStep">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Required URL -->
+				<xs:element name="url" type="xs:string" />
+				<!-- Required Field Name (For the file to be uploaded) -->
+				<xs:element name="fieldName" type="xs:string" />
+				<!-- Optional Additional Fields -->
+				<xs:element ref="additionalField" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optianol Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
+				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional Regular Expressions which can be used to change the filename, because some hosts may not accept certain characters or too long filenames -->
+				<xs:element name="filenameRegex" type="RegexAndReplacement" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Upload Additional Field -->
+	<xs:element name="additionalField">
+		<xs:complexType>
+			<!-- Required Field Name -->
+			<xs:attribute name="fieldName" type="xs:string" use="required" />
+			<!-- Required Field Value -->
+			<xs:attribute name="fieldValue" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Upload Result -->
+	<xs:element name="uploadResultStep">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Optional Regular Expressions which are used on HTTP Response Content -->
+				<xs:element name="regex" type="RegexAndReplacement" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Regex -->
+	<xs:complexType name="Regex">
+		<xs:sequence>
+			<!-- Required Regex Pattern -->
+			<xs:element name="pattern" type="xs:string" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<!-- Regex and Replacement -->
+	<xs:complexType name="RegexAndReplacement">
+		<xs:complexContent>
+			<xs:extension base="Regex">
+				<xs:sequence>
+					<!-- Required replacement -->
+					<xs:element name="replacement" type="xs:string" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<!-- Regex with Replacements -->
+	<xs:complexType name="RegexAndVariableStore">
+		<xs:complexContent>
+			<xs:extension base="Regex">
+				<xs:sequence>
+					<!-- Optional replacement -->
+					<xs:element name="replacement" type="xs:string" minOccurs="0" maxOccurs="1" />
+					<!-- Optional replacement variables stored to variables using replaceAll method -->
+					<xs:element name="replacementVariable" type="RegexReplacementVariableStore" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<!-- Regex Replacement -->
+	<xs:complexType name="RegexReplacementVariableStore">
+		<!-- Required Variable name to store the replacement -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
+		<!-- Required Replacement-->
+		<xs:attribute name="replacement" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<!-- HTTP Method -->
+	<xs:simpleType name="HTTPMethod">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GET" />
+			<xs:enumeration value="POST" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Form Content Type -->
+	<xs:simpleType name="FormContentType">
+		<xs:restriction base="xs:string">
+			<!-- multipart/form-data -->
+			<xs:enumeration value="MultiPartFormData" />
+			<!-- application/x-www-form-urlencoded -->
+			<xs:enumeration value="XWWWFormURLEncoded" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Password Variable -->
+	<xs:complexType name="PasswordVariable">
+		<!-- Required Variable name -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
+		<!-- Required Flag if value should be encrypted -->
+		<xs:attribute name="encrypted" type="xs:boolean" />
+	</xs:complexType>
+</xs:schema>

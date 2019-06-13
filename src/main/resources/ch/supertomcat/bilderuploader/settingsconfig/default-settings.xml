@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<settings>
+	<directorySettings>
+		<lastUsedPath />
+		<lastUsedImportPath />
+		<lastUsedExportPath />
+		<generatorOutputSaveDirectory />
+		<lastUsedGeneratorOutputSaveDirectory />
+	</directorySettings>
+
+	<connectionSettings>
+		<maxConnections />
+		<maxConnectionsPerHost />
+		<connectTimeout />
+		<socketTimeout />
+		<connectionRequestTimeout />
+		<proxy>
+			<mode />
+			<host />
+			<port />
+			<user />
+			<password />
+			<auth />
+		</proxy>
+		<userAgent />
+	</connectionSettings>
+	
+	<uploadSettings>
+		<uploadedBytes />
+		<uploadedFiles />
+		<saveLogs />
+		<maxFailedCount />
+		<autoStartUploads />
+		<autoRetryAfterUploadsComplete />
+	</uploadSettings>
+	
+	<guiSettings>
+		<language />
+		<saveTableColumnSizes />
+		<saveTableSortOrders />
+		<colWidthsQueue />
+		<tableSortOrdersQueue />
+		<sizeDisplayMode />
+		<progressDisplayMode />
+		<uploadRate />
+		<lookAndFeel />
+		<uploadsCompleteNotification />
+		<uploadsCompleteNotificationSeconds />
+		<selectedHoster />
+		<selectedBiWiHoster />
+		<selectedMainTemplate>BBCode Default.vm</selectedMainTemplate>
+		<selectedFooterTemplate>Footer Default.vm</selectedFooterTemplate>
+		<titleFilenameParserEnabled>false</titleFilenameParserEnabled>
+		<titleFilenameParserUseAll>true</titleFilenameParserUseAll>
+		<selectedTitleFilenameParser />
+		<mainWindow name="MainWindow" save="false">
+			<width />
+			<height />
+			<x />
+			<y />
+			<state />
+		</mainWindow>
+	</guiSettings>
+	
+	<backupDbOnStart />
+	
+	<logLevel />
+</settings>

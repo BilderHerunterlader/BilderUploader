@@ -1,0 +1,6 @@
+#if($countPerLine && $countPerLine > 0)
+#parse("includes/filesPerLine.vm")
+#else
+#parse("includes/filesInOneLine.vm")
+
+#end

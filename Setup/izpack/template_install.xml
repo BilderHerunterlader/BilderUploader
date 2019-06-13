@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+
+<izpack:installation version="5.0"
+                     xmlns:izpack="http://izpack.org/schema/installation"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://izpack.org/schema/installation http://izpack.org/schema/5.0/izpack-installation-5.0.xsd">
+	<info>
+		<appname>BilderUploader</appname>
+		<appversion>TemplateY</appversion>
+		<authors>
+			<author name="bilderherunterlader" email="bilderherunterlader@gmail.com"/>
+		</authors>
+		<url>https://github.com/BilderHerunterlader/BilderUploader</url>
+		<javaversion>1.8</javaversion>
+	</info>
+	
+	<guiprefs width="640" height="480" resizable="yes"/>
+	
+	<locale>
+		<langpack iso3="eng"/>
+		<langpack iso3="deu"/>
+	</locale>
+	
+	<resources>
+		<res id="LicencePanel.licence" src="../../LICENSE"/>
+		<res id="packsLang.xml" src="packsLang_eng.xml"/>
+		<res id="packsLang.xml_deu" src="packsLang_deu.xml"/>
+		<res id="packsLang.xml_eng" src="packsLang_eng.xml"/>
+		<res id="shortcutSpec.xml" src="shortcutSpec.xml"/>
+		<res id="Unix_shortcutSpec.xml" src="Unix_shortcutSpec.xml"/>
+	</resources>
+	
+	<panels>
+		<panel classname="HelloPanel"/>
+		<panel classname="LicencePanel"/>
+		<panel classname="TargetPanel"/>
+		<panel classname="PacksPanel"/>
+		<panel classname="InstallPanel"/>
+		<panel classname="ShortcutPanel"/>
+		<panel classname="FinishPanel"/>
+	</panels>
+	
+	<packs>
+		<pack name="BilderUploaderCore" required="yes" id="package.base">
+			<description>Program-files</description>
+			<fileset dir="../.." targetdir="$INSTALL_PATH">
+				<include name="BilderUploader.jar" />
+				<include name="LICENSE" />
+				<include name="directories.properties.example" />
+			</fileset>
+			<file src="../../BUIcons/Icon/BilderUploader-256.png" targetdir="$INSTALL_PATH" />
+			<file src="../../BUIcons/Icon/BUIcon.ico" targetdir="$INSTALL_PATH" />
+		</pack>
+		
+		<pack name="Libraries" required="yes" id="package.libs">
+			<description>Libraries</description>
+			<fileset dir="../../lib" targetdir="$INSTALL_PATH/lib">
+				<include name="*.jar" />
+			</fileset>
+		</pack>
+		
+		<pack name="Hosts" required="yes" id="package.hosts">
+			<description>Hosts</description>
+			<fileset dir="../../hosts" targetdir="$INSTALL_PATH/hosts">
+				<include name="*.xsd" />
+				<include name="*.xml" />
+			</fileset>
+		</pack>
+		
+		<pack name="Templates" required="yes" id="package.templates">
+			<description>Templates</description>
+			<fileset dir="../../templates" targetdir="$INSTALL_PATH/templates">
+			</fileset>
+		</pack>
+	</packs>
+	
+	<natives>
+		<native type="izpack" name="ShellLink.dll"/>
+		<native type="izpack" name="ShellLink_x64.dll"/>
+	</natives>
+</izpack:installation>

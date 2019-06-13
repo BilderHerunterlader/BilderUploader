@@ -1,0 +1,5 @@
+## Render 5 files per line **
+#set($countPerLine = 5)
+#set($groupByFolder = true)
+#set($centerOutput = true)
+#parse("includes/main.vm")

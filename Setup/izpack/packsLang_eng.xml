@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+<!-- The German langpack for the Risk installer -->
+<izpack:langpack version="5.0" xmlns:izpack="http://izpack.org/schema/langpack" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://izpack.org/schema/langpack http://izpack.org/schema/5.0/izpack-langpack-5.0.xsd">
+	<str id="package.base" txt="BilderUploaderCore" />
+	<str id="package.base.description" txt="BilderUploaderCore" />
+
+	<str id="package.libs" txt="Libraries" />
+	<str id="package.libs.description" txt="Libraries" />
+
+	<str id="package.hosts" txt="Hosts" />
+	<str id="package.hosts.description" txt="Hosts" />
+	
+	<str id="package.templates" txt="Templates" />
+	<str id="package.templates.description" txt="Templates" />
+</izpack:langpack>
