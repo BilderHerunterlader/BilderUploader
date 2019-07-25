@@ -2,6 +2,7 @@ package ch.supertomcat.bilderuploader.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
@@ -33,6 +34,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -46,6 +48,8 @@ import ch.supertomcat.bilderuploader.hoster.HosterManager;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
 import ch.supertomcat.bilderuploader.queue.QueueManager;
 import ch.supertomcat.bilderuploader.queue.UploadQueueManager;
+import ch.supertomcat.bilderuploader.settings.BUSettingsListener;
+import ch.supertomcat.bilderuploader.settings.ProxyManager;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.bilderuploader.settingsconfig.WindowSettings;
 import ch.supertomcat.bilderuploader.templates.TemplateManager;
@@ -109,14 +113,15 @@ public class MainWindow extends JFrame {
 	 * @param templateManager Template Manager
 	 * @param titleFilenameParserManager Title Filename Parser Manager
 	 * @param settingsManager Settings Manager
+	 * @param proxyManager Proxy Manager
 	 * @param queueManager Queue Manager
 	 * @param uploadQueueManager Upload Queue Manager
 	 * @param systemTray True if system tray is used, false otherwise
 	 */
-	public MainWindow(HosterManager hosterManager, TemplateManager templateManager, TitleFilenameParserManager titleFilenameParserManager, SettingsManager settingsManager, QueueManager queueManager,
-			UploadQueueManager uploadQueueManager, boolean systemTray) {
+	public MainWindow(HosterManager hosterManager, TemplateManager templateManager, TitleFilenameParserManager titleFilenameParserManager, SettingsManager settingsManager, ProxyManager proxyManager,
+			QueueManager queueManager, UploadQueueManager uploadQueueManager, boolean systemTray) {
 		super("BilderUploader");
-		this.mainMenuBar = new MainMenuBar(this, settingsManager, hosterManager, listeners);
+		this.mainMenuBar = new MainMenuBar(this, settingsManager, proxyManager, hosterManager, listeners);
 
 		setIconImage(Icons.getImage("/ch/supertomcat/bilderuploader/gui/icons/BilderUploader-16x16.png"));
 
@@ -292,6 +297,24 @@ public class MainWindow extends JFrame {
 			pack();
 			setLocationRelativeTo(null);
 		}
+
+		settingsManager.addSettingsListener(new BUSettingsListener() {
+
+			@Override
+			public void settingsChanged() {
+				// Nothing to do
+			}
+
+			@Override
+			public void lookAndFeelChanged() {
+				EventQueue.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						SwingUtilities.updateComponentTreeUI(MainWindow.this);
+					}
+				});
+			}
+		});
 
 		addWindowListener(new WindowAdapter() {
 			@Override

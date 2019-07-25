@@ -2,11 +2,14 @@ package ch.supertomcat.bilderuploader.settings;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.xml.bind.JAXBException;
 
 import org.apache.logging.log4j.Level;
@@ -43,17 +46,17 @@ public class SettingsManager extends SettingsManagerBase<Settings, BUSettingsLis
 	/**
 	 * LookAndFeel ClassNames
 	 */
-	protected static final Map<LookAndFeelSetting, String> LOOK_AND_FEEL_CLASS_NAMES = new HashMap<>();
+	protected static final Map<LookAndFeelSetting, String> LOOK_AND_FEEL_CLASS_NAMES = new LinkedHashMap<>();
 
 	/**
 	 * LookAndFeel Names
 	 */
-	protected static final Map<LookAndFeelSetting, String> LOOK_AND_FEEL_NAMES = new HashMap<>();
+	protected static final Map<LookAndFeelSetting, String> LOOK_AND_FEEL_NAMES = new LinkedHashMap<>();
 
 	/**
 	 * Log Level Mapping
 	 */
-	protected static final Map<LogLevelSetting, Level> LOG_LEVEL_MAPPING = new HashMap<>();
+	protected static final Map<LogLevelSetting, Level> LOG_LEVEL_MAPPING = new LinkedHashMap<>();
 
 	static {
 		LOOK_AND_FEEL_CLASS_NAMES.put(LookAndFeelSetting.LAF_DEFAULT, UIManager.getCrossPlatformLookAndFeelClassName());
@@ -219,6 +222,7 @@ public class SettingsManager extends SettingsManagerBase<Settings, BUSettingsLis
 			logger.error("Unsupported log level: {}", logLevel);
 			return;
 		}
+		settings.setLogLevel(logLevel);
 		BUUtil.changeLog4JRootLoggerLevel(log4jLevel);
 	}
 
@@ -228,17 +232,30 @@ public class SettingsManager extends SettingsManagerBase<Settings, BUSettingsLis
 	public void setLanguage(String language) {
 		settings.getGuiSettings().setLanguage(language);
 		languageFirstRun = false;
-		writeSettings(true);
 	}
 
 	/**
 	 * @param lookAndFeel Look and Feel
 	 */
 	public void setLookAndFeel(LookAndFeelSetting lookAndFeel) {
+		LookAndFeelSetting previousLAF = settings.getGuiSettings().getLookAndFeel();
 		settings.getGuiSettings().setLookAndFeel(lookAndFeel);
-		writeSettings(true);
-		for (BUSettingsListener listener : listeners) {
-			listener.lookAndFeelChanged();
+		if (lookAndFeel != previousLAF) {
+			String lafClassName = LOOK_AND_FEEL_CLASS_NAMES.get(lookAndFeel);
+			if (lafClassName == null) {
+				logger.error("LookAndFeelSetting missing in LOOK_AND_FEEL_CLASS_NAMES map!");
+				return;
+			}
+			try {
+				UIManager.setLookAndFeel(lafClassName);
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+				logger.error("Could not set LookAndFeel", e);
+				return;
+			}
+
+			for (BUSettingsListener listener : listeners) {
+				listener.lookAndFeelChanged();
+			}
 		}
 	}
 
@@ -387,5 +404,17 @@ public class SettingsManager extends SettingsManagerBase<Settings, BUSettingsLis
 			return "OperatingSystem";
 		}
 		return name;
+	}
+
+	/**
+	 * @return LookAndFeels
+	 */
+	public static List<LookAndFeelSetting> getLookAndFeels() {
+		List<LookAndFeelSetting> lookAndFeels = new ArrayList<>();
+		// Use entrySet instead of keySet, so that insertion order is preserved
+		for (Map.Entry<LookAndFeelSetting, String> entry : LOOK_AND_FEEL_NAMES.entrySet()) {
+			lookAndFeels.add(entry.getKey());
+		}
+		return lookAndFeels;
 	}
 }

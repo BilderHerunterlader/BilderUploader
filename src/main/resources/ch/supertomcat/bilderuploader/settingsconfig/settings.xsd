@@ -110,7 +110,6 @@
 			<xs:element name="lookAndFeel" type="LookAndFeelSetting" default="LAF_OS" />
 			
 			<xs:element name="uploadsCompleteNotification" type="xs:boolean" default="true" />
-			<xs:element name="uploadsCompleteNotificationSeconds" type="xs:int" default="5" />
 			
 			<xs:element name="selectedHoster" type="xs:string" nillable="true" />
 			<xs:element name="selectedBiWiHoster" type="xs:string" nillable="true" />

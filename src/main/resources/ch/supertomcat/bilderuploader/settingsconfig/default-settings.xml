@@ -45,7 +45,6 @@
 		<uploadRate />
 		<lookAndFeel />
 		<uploadsCompleteNotification />
-		<uploadsCompleteNotificationSeconds />
 		<selectedHoster />
 		<selectedBiWiHoster />
 		<selectedMainTemplate>BBCode Default.vm</selectedMainTemplate>

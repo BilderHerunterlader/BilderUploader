@@ -27,7 +27,7 @@ import ch.supertomcat.bilderuploader.queue.UploadQueueManager;
 import ch.supertomcat.bilderuploader.settings.ProxyManager;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.bilderuploader.settingsconfig.LookAndFeelSetting;
-import ch.supertomcat.bilderuploader.systemtry.SystemTrayTool;
+import ch.supertomcat.bilderuploader.systemtray.SystemTrayTool;
 import ch.supertomcat.bilderuploader.templates.TemplateManager;
 import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParserManager;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
@@ -93,6 +93,7 @@ public class BilderUploader {
 				} else if (ret == 1) {
 					settingsManager.setLanguage("de_DE");
 				}
+				settingsManager.writeSettings(true);
 			} finally {
 				if (frame != null) {
 					frame.dispose();
@@ -137,7 +138,7 @@ public class BilderUploader {
 
 		boolean systemTray = SystemTrayTool.isTraySupported();
 
-		mainWindow = new MainWindow(hosterManager, templateManager, titleFilenameParserManager, settingsManager, queueManager, uploadQueueManager, systemTray);
+		mainWindow = new MainWindow(hosterManager, templateManager, titleFilenameParserManager, settingsManager, proxyManager, queueManager, uploadQueueManager, systemTray);
 		mainWindow.addListener(new MainWindowListener() {
 			@Override
 			public void exitApplication() {

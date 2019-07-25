@@ -2,7 +2,7 @@
 // Diese Datei wurde mit der JavaTM Architecture for XML Binding(JAXB) Reference Implementation, v2.2.8-b130911.1802 generiert 
 // Siehe <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Änderungen an dieser Datei gehen bei einer Neukompilierung des Quellschemas verloren. 
-// Generiert: 2019.06.13 um 10:26:28 PM CEST 
+// Generiert: 2019.07.25 um 10:53:56 PM CEST 
 //
 
 
@@ -35,7 +35,6 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="uploadRate" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
  *         &lt;element name="lookAndFeel" type="{}LookAndFeelSetting"/>
  *         &lt;element name="uploadsCompleteNotification" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
- *         &lt;element name="uploadsCompleteNotificationSeconds" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="selectedHoster" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="selectedBiWiHoster" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="selectedMainTemplate" type="{http://www.w3.org/2001/XMLSchema}string"/>
@@ -64,7 +63,6 @@ import javax.xml.bind.annotation.XmlType;
     "uploadRate",
     "lookAndFeel",
     "uploadsCompleteNotification",
-    "uploadsCompleteNotificationSeconds",
     "selectedHoster",
     "selectedBiWiHoster",
     "selectedMainTemplate",
@@ -99,8 +97,6 @@ public class GUISettings {
     protected LookAndFeelSetting lookAndFeel;
     @XmlElement(defaultValue = "true")
     protected boolean uploadsCompleteNotification;
-    @XmlElement(defaultValue = "5")
-    protected int uploadsCompleteNotificationSeconds;
     @XmlElement(required = true, nillable = true)
     protected String selectedHoster;
     @XmlElement(required = true, nillable = true)
@@ -322,22 +318,6 @@ public class GUISettings {
      */
     public void setUploadsCompleteNotification(boolean value) {
         this.uploadsCompleteNotification = value;
-    }
-
-    /**
-     * Ruft den Wert der uploadsCompleteNotificationSeconds-Eigenschaft ab.
-     * 
-     */
-    public int getUploadsCompleteNotificationSeconds() {
-        return uploadsCompleteNotificationSeconds;
-    }
-
-    /**
-     * Legt den Wert der uploadsCompleteNotificationSeconds-Eigenschaft fest.
-     * 
-     */
-    public void setUploadsCompleteNotificationSeconds(int value) {
-        this.uploadsCompleteNotificationSeconds = value;
     }
 
     /**

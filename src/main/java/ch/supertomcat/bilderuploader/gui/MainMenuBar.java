@@ -1,7 +1,6 @@
 package ch.supertomcat.bilderuploader.gui;
 
 import java.awt.Desktop;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -18,15 +17,16 @@ import javax.swing.JComboBox;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.supertomcat.bilderuploader.gui.renderer.HosterComboBoxRenderer;
+import ch.supertomcat.bilderuploader.gui.settings.SettingsDialog;
 import ch.supertomcat.bilderuploader.hoster.HosterManager;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
+import ch.supertomcat.bilderuploader.settings.ProxyManager;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.gui.Icons;
@@ -96,11 +96,12 @@ public class MainMenuBar {
 	 * 
 	 * @param mainWindow Main Window
 	 * @param settingsManager Settings Manager
+	 * @param proxyManager Proxy Manager
 	 * @param hosterManager Hoster Manager
 	 * @param listeners Main Window Listeners
 	 */
 	@SuppressWarnings("unchecked")
-	public MainMenuBar(Window mainWindow, SettingsManager settingsManager, HosterManager hosterManager, List<MainWindowListener> listeners) {
+	public MainMenuBar(MainWindow mainWindow, SettingsManager settingsManager, ProxyManager proxyManager, HosterManager hosterManager, List<MainWindowListener> listeners) {
 		menuFile.add(itemExit);
 
 		menuSettings.add(itemSettings);
@@ -124,8 +125,7 @@ public class MainMenuBar {
 		itemSettings.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Settings Window
-				JOptionPane.showMessageDialog(mainWindow, "Not yet implemented", "Not yet implemented", JOptionPane.INFORMATION_MESSAGE);
+				new SettingsDialog(mainWindow, settingsManager, proxyManager);
 			}
 		});
 
