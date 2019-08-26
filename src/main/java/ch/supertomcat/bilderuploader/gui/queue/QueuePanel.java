@@ -673,7 +673,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 		int sessionDownloadedFiles = uploadQueueManager.getSessionFiles();
 		String sessionDownloadedBytes = UnitFormatUtil.getSizeString(uploadQueueManager.getSessionBytes(), settingsManager.getGUISettings().getSizeDisplayMode().ordinal());
 		// TODO Update Rate
-		// String downloadRate = UnitFormatTool.getBitrateString(uploadQueueManager.get.getDownloadBitrate());
+		// String downloadRate = UnitFormatUtil.getBitrateString(uploadQueueManager.get.getDownloadBitrate());
 		String rate = "";
 		if (rate.isEmpty()) {
 			rate = Localization.getString("NotAvailable");
