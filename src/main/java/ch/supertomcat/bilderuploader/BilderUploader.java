@@ -50,9 +50,9 @@ public class BilderUploader {
 	private SystemTrayTool stt = null;
 
 	/**
-	 * Shutdown-Thread
+	 * Upload Queue Manager
 	 */
-	private Thread shutdownThread = null;
+	private UploadQueueManager uploadQueueManager = null;
 
 	/**
 	 * Constructor
@@ -118,7 +118,7 @@ public class BilderUploader {
 		TemplateManager templateManager = new TemplateManager(null);
 		TitleFilenameParserManager titleFilenameParserManager = new TitleFilenameParserManager();
 		QueueManager queueManager = new QueueManager(settingsManager, hosterManager);
-		UploadQueueManager uploadQueueManager = new UploadQueueManager(queueManager, settingsManager, proxyManager);
+		uploadQueueManager = new UploadQueueManager(queueManager, settingsManager, proxyManager);
 
 		boolean systemTray = SystemTrayTool.isTraySupported();
 
@@ -126,7 +126,6 @@ public class BilderUploader {
 		mainWindow.addListener(new MainWindowListener() {
 			@Override
 			public void exitApplication() {
-				uploadQueueManager.stop();
 				exit();
 			}
 		});
@@ -142,21 +141,15 @@ public class BilderUploader {
 			mainWindow.toFront();
 			mainWindow.requestFocus();
 		}
-
-		// Create and register the Shutdown-Thread
-		shutdownThread = new Thread("Shutdown-Thread") {
-			@Override
-			public void run() {
-				exit();
-			}
-		};
-		Runtime.getRuntime().addShutdownHook(shutdownThread);
 	}
 
 	/**
 	 * Exit
 	 */
 	private synchronized void exit() {
+		if (uploadQueueManager != null) {
+			uploadQueueManager.stop();
+		}
 		if (stt != null) {
 			stt.remove();
 			stt = null;
@@ -171,14 +164,29 @@ public class BilderUploader {
 	public static void main(String[] args) {
 		List<String> additionalPaths = Arrays.asList("DatabasePath", "SettingsPath", "UploadLogPath");
 		ApplicationMain applicationMain = new ApplicationMain("BU", null, true, true, BilderUploader.class, additionalPaths) {
+			/**
+			 * BU
+			 */
+			private BilderUploader bu = null;
+
 			@Override
 			protected void main(String[] args) {
 				try {
-					new BilderUploader();
+					bu = new BilderUploader();
+
+					// Create and register the Shutdown-Thread
+					addDefaultShutdownHook();
 				} catch (Exception e) {
 					LoggerFactory.getLogger(BilderUploader.class).error("Could not initialized BilderUploader", e);
 					displayStartupError("BilderUploader could not be started!: " + e.getMessage());
 					System.exit(1);
+				}
+			}
+
+			@Override
+			protected void shutdownHookExit() {
+				if (bu != null) {
+					bu.exit();
 				}
 			}
 		};
