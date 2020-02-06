@@ -571,6 +571,17 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		}
 	}
 
+	/**
+	 * Execute URL Connection Upload
+	 * 
+	 * @param url URL
+	 * @param fileFieldName Field name for file
+	 * @param file File
+	 * @param fileName File name
+	 * @param fields Fields
+	 * @param listener Listener or null
+	 * @return Container Page
+	 */
 	public ContainerPage executeURLConnectionUpload(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, UploadProgressListener listener) {
 		try {
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -610,7 +621,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				String page = readStream(conn.getInputStream());
 				return new ContainerPage(true, page, "", null);
 			}
-
 		} catch (Exception e) {
 			logger.error("xxx", e);
 		}

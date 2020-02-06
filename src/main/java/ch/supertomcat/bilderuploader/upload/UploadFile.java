@@ -106,6 +106,7 @@ public class UploadFile {
 	 * @param hoster Hoster
 	 * @param size File Size
 	 * @param dateTimeAdded Added DateTime
+	 * @param mimeType Mime Type
 	 * @param status Status
 	 * @param errMsg Error Message
 	 * @param failedCount Failed Count
