@@ -27,6 +27,8 @@ public class UploadQueueManager extends QueueManagerBase<UploadFile, FileUploadR
 	private List<UploadQueueManagerListener> listeners = new CopyOnWriteArrayList<>();
 
 	/**
+	 * TODO This only used to add a listener, which only calls public methods of this class. So it should probably be the other way around and the QueueManager
+	 * should have a reference to UploadQueueManager
 	 * Queue Manager
 	 */
 	private final QueueManager queueManager;
@@ -199,15 +201,6 @@ public class UploadQueueManager extends QueueManagerBase<UploadFile, FileUploadR
 	protected void addTaskToExecutingTasks(QueueTask<UploadFile, FileUploadResult> task) {
 		task.getTask().setStatus(UploadFileState.UPLOADING);
 		super.addTaskToExecutingTasks(task);
-	}
-
-	@Override
-	protected int compareTasks(UploadFile t1, UploadFile t2) {
-		int comparison = super.compareTasks(t1, t2);
-		if (comparison == 0) {
-			return Long.compare(t1.getDateTimeAdded(), t2.getDateTimeAdded());
-		}
-		return comparison;
 	}
 
 	@Override

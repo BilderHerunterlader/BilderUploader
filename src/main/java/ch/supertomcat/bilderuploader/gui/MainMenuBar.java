@@ -161,7 +161,7 @@ public class MainMenuBar {
 		itemAbout.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new About(mainWindow, settingsManager);
+				new BUAboutDialog(mainWindow);
 			}
 		});
 
