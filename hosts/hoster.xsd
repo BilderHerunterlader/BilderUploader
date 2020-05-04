@@ -79,10 +79,14 @@
 				<xs:element name="formContentType" type="FormContentType" minOccurs="0" maxOccurs="1" />
 				<!-- Optional Additional Fields (Only used when HTTP Method is POST) -->
 				<xs:element ref="additionalField" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional HTTP Header Values -->
+				<xs:element ref="additionalHeader" minOccurs="0" maxOccurs="unbounded" />
 				<!-- Optianol Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
 				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
 				<!-- Optional Regular Expressions which are used on HTTP Response Content -->
 				<xs:element name="regex" type="RegexAndVariableStore" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional Variable Store from HTTP Response Cookies -->
+				<xs:element name="cookieVariableStore" type="CookieVariableStore" minOccurs="0" maxOccurs="unbounded" />
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -97,7 +101,9 @@
 				<xs:element name="fieldName" type="xs:string" />
 				<!-- Optional Additional Fields -->
 				<xs:element ref="additionalField" minOccurs="0" maxOccurs="unbounded" />
-				<!-- Optianol Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
+				<!-- Optional HTTP Header Values -->
+				<xs:element ref="additionalHeader" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
 				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
 				<!-- Optional Regular Expressions which can be used to change the filename, because some hosts may not accept certain characters or too long filenames -->
 				<xs:element name="filenameRegex" type="RegexAndReplacement" minOccurs="0" maxOccurs="unbounded" />
@@ -112,6 +118,16 @@
 			<xs:attribute name="fieldName" type="xs:string" use="required" />
 			<!-- Required Field Value -->
 			<xs:attribute name="fieldValue" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Additional Header -->
+	<xs:element name="additionalHeader">
+		<xs:complexType>
+			<!-- Required Field Name -->
+			<xs:attribute name="headerName" type="xs:string" use="required" />
+			<!-- Required Field Value -->
+			<xs:attribute name="headerValue" type="xs:string" use="required" />
 		</xs:complexType>
 	</xs:element>
 	
@@ -158,13 +174,21 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	
+
 	<!-- Regex Replacement -->
 	<xs:complexType name="RegexReplacementVariableStore">
 		<!-- Required Variable name to store the replacement -->
 		<xs:attribute name="variableName" type="xs:string" use="required" />
 		<!-- Required Replacement-->
 		<xs:attribute name="replacement" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<!-- Cookie Variable Store -->
+	<xs:complexType name="CookieVariableStore">
+		<!-- Required Cookie name to get the cookie value -->
+		<xs:attribute name="cookieName" type="xs:string" use="required" />
+		<!-- Required Variable name to store the cookie value -->
+		<xs:attribute name="variableName" type="xs:string" use="required" />
 	</xs:complexType>
 	
 	<!-- HTTP Method -->

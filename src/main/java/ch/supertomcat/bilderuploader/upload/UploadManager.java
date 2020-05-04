@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.apache.commons.text.StringSubstitutor;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -27,8 +29,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
@@ -39,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.supertomcat.bilderuploader.hosterconfig.AdditionalField;
+import ch.supertomcat.bilderuploader.hosterconfig.AdditionalHeader;
+import ch.supertomcat.bilderuploader.hosterconfig.CookieVariableStore;
 import ch.supertomcat.bilderuploader.hosterconfig.FormContentType;
 import ch.supertomcat.bilderuploader.hosterconfig.GenerateRandom;
 import ch.supertomcat.bilderuploader.hosterconfig.HTTPMethod;
@@ -109,108 +115,108 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @throws IOException
 	 */
 	public FileUploadResult uploadFile(Hoster hoster, File file, long fileSize, UploadProgressListener listener) throws IOException {
-		try (CloseableHttpClient client = proxyManager.getHTTPClient()) {
-			return uploadFile(hoster, file, fileSize, listener, client);
-		}
-	}
+		CookieStore cookieStore = new BasicCookieStore();
+		try (CloseableHttpClient client = proxyManager.getHTTPClientBuilder().setDefaultCookieStore(cookieStore).build()) {
+			listener.statusChanged(UploadFileState.UPLOADING);
+			HosterSettings hosterSettings = settingsManager.getHosterSettings(hoster.getName());
 
-	/**
-	 * Uploads the given file to the hoster
-	 * 
-	 * @param hoster Hoster
-	 * @param file File
-	 * @param fileSize File Size
-	 * @param listener Listener or null
-	 * @param client HTTP Client
-	 * @return Upload Result
-	 * @throws IOException
-	 */
-	public FileUploadResult uploadFile(Hoster hoster, File file, long fileSize, UploadProgressListener listener, CloseableHttpClient client) throws IOException {
-		listener.statusChanged(UploadFileState.UPLOADING);
-		HosterSettings hosterSettings = settingsManager.getHosterSettings(hoster.getName());
+			Map<String, String> dymanicVariables = new LinkedHashMap<>();
+			dymanicVariables.put("FileName", file.getName());
+			dymanicVariables.put("FileSize", Long.toString(fileSize));
+			dymanicVariables.put("FileLastModified", Long.toString(file.lastModified()));
 
-		Map<String, String> dymanicVariables = new LinkedHashMap<>();
-		dymanicVariables.put("FileName", file.getName());
-		dymanicVariables.put("FileSize", Long.toString(fileSize));
-		dymanicVariables.put("FileLastModified", Long.toString(file.lastModified()));
-
-		Map<String, String> passwordValues = new LinkedHashMap<>();
-		List<PasswordVariable> passwordVariables = hoster.getPasswordVariable();
-		if (!passwordVariables.isEmpty()) {
-			if (hosterSettings != null) {
-				Map<String, Object> hosterSettingsValues = settingsManager.getHosterSettingsValues(hoster.getName());
-				for (PasswordVariable passwordVariable : passwordVariables) {
-					String variableName = passwordVariable.getVariableName();
-					Object variableValue = hosterSettingsValues.get(variableName);
-					if (variableValue == null) {
-						logger.error("Hoster Settings Value is null: {}", variableName);
+			Map<String, String> passwordValues = new LinkedHashMap<>();
+			List<PasswordVariable> passwordVariables = hoster.getPasswordVariable();
+			if (!passwordVariables.isEmpty()) {
+				if (hosterSettings != null) {
+					Map<String, Object> hosterSettingsValues = settingsManager.getHosterSettingsValues(hoster.getName());
+					for (PasswordVariable passwordVariable : passwordVariables) {
+						String variableName = passwordVariable.getVariableName();
+						Object variableValue = hosterSettingsValues.get(variableName);
+						if (variableValue == null) {
+							logger.error("Hoster Settings Value is null: {}", variableName);
+						}
+						passwordValues.put(variableName, String.valueOf(variableValue));
 					}
-					passwordValues.put(variableName, String.valueOf(variableValue));
+				} else {
+					throw new IOException("Hoster has password variables, but no Hoster Settings exist for Hoster: " + hoster.getName());
 				}
-			} else {
-				throw new IOException("Hoster has password variables, but no Hoster Settings exist for Hoster: " + hoster.getName());
-			}
-		}
-
-		dymanicVariables.putAll(passwordValues);
-
-		generateRandoms(hoster.getGenerateRandom(), dymanicVariables);
-
-		List<String> prepareUploadResultTexts = new ArrayList<>();
-		for (PrepareUploadStep prepareUploadStep : hoster.getPrepareUploadStep()) {
-			String prepareUploadURL = StringSubstitutor.replace(prepareUploadStep.getUrl(), dymanicVariables);
-			HTTPMethod httpMethod = prepareUploadStep.getHttpMethod();
-			logger.info("Prepare Upload Step: URL: {}, HTTP-Method: {}", prepareUploadURL, httpMethod);
-			ContainerPage prepareUploadContainerPage;
-			if (httpMethod == HTTPMethod.POST) {
-				Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareUploadStep.getAdditionalField(), dymanicVariables);
-				boolean multiPart = prepareUploadStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
-				prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, client);
-			} else {
-				prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, client);
 			}
 
-			if (prepareUploadContainerPage.isSuccess()) {
-				logger.info("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
-				checkForFailure(prepareUploadStep.getFailureRegex(), prepareUploadContainerPage, listener);
-				prepareUploadResultTexts.addAll(getPrepareUploadResults(prepareUploadStep, prepareUploadContainerPage, dymanicVariables));
-				logger.info("Dynamic Variables after Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, dymanicVariables);
+			dymanicVariables.putAll(passwordValues);
+
+			generateRandoms(hoster.getGenerateRandom(), dymanicVariables);
+
+			List<String> prepareUploadResultTexts = new ArrayList<>();
+			for (PrepareUploadStep prepareUploadStep : hoster.getPrepareUploadStep()) {
+				String prepareUploadURL = StringSubstitutor.replace(prepareUploadStep.getUrl(), dymanicVariables);
+				HTTPMethod httpMethod = prepareUploadStep.getHttpMethod();
+				logger.info("Prepare Upload Step: URL: {}, HTTP-Method: {}", prepareUploadURL, httpMethod);
+				ContainerPage prepareUploadContainerPage;
+				Map<String, String> additionalHeaders = prepareAdditionalHeaders(prepareUploadStep.getAdditionalHeader(), dymanicVariables);
+				if (httpMethod == HTTPMethod.POST) {
+					Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareUploadStep.getAdditionalField(), dymanicVariables);
+					boolean multiPart = prepareUploadStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
+					prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, additionalHeaders, client);
+				} else {
+					prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, additionalHeaders, client);
+				}
+
+				if (prepareUploadContainerPage.isSuccess()) {
+					logger.info("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
+					checkForFailure(prepareUploadStep.getFailureRegex(), prepareUploadContainerPage, listener);
+					prepareUploadResultTexts.addAll(getPrepareUploadResults(prepareUploadStep, prepareUploadContainerPage, dymanicVariables));
+
+					// TODO Move to new method
+					for (CookieVariableStore cookieVariableStore : prepareUploadStep.getCookieVariableStore()) {
+						// TODO Log missing cookie
+						for (Cookie cookie : cookieStore.getCookies()) {
+							if (cookie.getName().equals(cookieVariableStore.getCookieName())) {
+								dymanicVariables.put(cookieVariableStore.getVariableName(), cookie.getValue());
+								break;
+							}
+						}
+					}
+
+					logger.info("Dynamic Variables after Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, dymanicVariables);
+				} else {
+					logger.error("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
+					listener.statusChanged(UploadFileState.FAILED);
+					throw new IOException("Prepare Upload Failed: " + prepareUploadContainerPage.getStatusLine());
+				}
+			}
+
+			logger.info("Dynamic Variables after Prepare Upload: {}", dymanicVariables);
+
+			UploadStep uploadStep = hoster.getUploadStep();
+			String fileFieldName = uploadStep.getFieldName();
+			String filename = file.getName();
+			String preparedFilename = prepareFilename(filename, uploadStep.getFilenameRegex());
+			dymanicVariables.put("PreparedFileName", preparedFilename);
+			String uploadURL = StringSubstitutor.replace(uploadStep.getUrl(), dymanicVariables);
+			Map<String, String> uploadFields = prepareAdditionalFields(uploadStep.getAdditionalField(), dymanicVariables);
+			Map<String, String> additionalHeaders = prepareAdditionalHeaders(uploadStep.getAdditionalHeader(), dymanicVariables);
+
+			logger.info("Upload Step: URL: {}, FileFieldName: {}, Filename: {}", uploadURL, fileFieldName, preparedFilename);
+
+			ContainerPage uploadContainerPage = executeHTTPPostRequest(uploadURL, fileFieldName, file, preparedFilename, uploadFields, additionalHeaders, listener, client);
+			// ContainerPage uploadContainerPage = executeURLConnectionUpload(uploadURL, fileFieldName, file, file.getName(), uploadFields, listener);
+			if (uploadContainerPage.isSuccess()) {
+				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
+				checkForFailure(uploadStep.getFailureRegex(), uploadContainerPage, listener);
+				UploadResultStep uploadResultStep = hoster.getUploadResultStep();
+				listener.statusChanged(UploadFileState.COMPLETE);
+				List<String> uploadResultTexts = getResultTexts(uploadResultStep, uploadContainerPage);
+				if (uploadResultTexts.isEmpty()) {
+					logger.info("No Upload Result Texts found for Upload Step: URL={}", uploadURL);
+					throw new IOException("Upload Failed: No Upload Result Texts found");
+				}
+				return new FileUploadResult(prepareUploadResultTexts, uploadResultTexts);
 			} else {
-				logger.error("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
+				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
 				listener.statusChanged(UploadFileState.FAILED);
-				throw new IOException("Prepare Upload Failed: " + prepareUploadContainerPage.getStatusLine());
+				throw new IOException("Upload Failed: " + uploadContainerPage.getStatusLine());
 			}
-		}
-
-		logger.info("Dynamic Variables after Prepare Upload: {}", dymanicVariables);
-
-		UploadStep uploadStep = hoster.getUploadStep();
-		String fileFieldName = uploadStep.getFieldName();
-		String filename = file.getName();
-		String preparedFilename = prepareFilename(filename, uploadStep.getFilenameRegex());
-		dymanicVariables.put("PreparedFileName", preparedFilename);
-		String uploadURL = StringSubstitutor.replace(uploadStep.getUrl(), dymanicVariables);
-		Map<String, String> uploadFields = prepareAdditionalFields(uploadStep.getAdditionalField(), dymanicVariables);
-
-		logger.info("Upload Step: URL: {}, FileFieldName: {}, Filename: {}", uploadURL, fileFieldName, preparedFilename);
-
-		ContainerPage uploadContainerPage = executeHTTPPostRequest(uploadURL, fileFieldName, file, preparedFilename, uploadFields, listener, client);
-		// ContainerPage uploadContainerPage = executeURLConnectionUpload(uploadURL, fileFieldName, file, file.getName(), uploadFields, listener);
-		if (uploadContainerPage.isSuccess()) {
-			logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
-			checkForFailure(uploadStep.getFailureRegex(), uploadContainerPage, listener);
-			UploadResultStep uploadResultStep = hoster.getUploadResultStep();
-			listener.statusChanged(UploadFileState.COMPLETE);
-			List<String> uploadResultTexts = getResultTexts(uploadResultStep, uploadContainerPage);
-			if (uploadResultTexts.isEmpty()) {
-				logger.info("No Upload Result Texts found for Upload Step: URL={}", uploadURL);
-				throw new IOException("Upload Failed: No Upload Result Texts found");
-			}
-			return new FileUploadResult(prepareUploadResultTexts, uploadResultTexts);
-		} else {
-			logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
-			listener.statusChanged(UploadFileState.FAILED);
-			throw new IOException("Upload Failed: " + uploadContainerPage.getStatusLine());
 		}
 	}
 
@@ -252,16 +258,34 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * Prepare Additional Fields
 	 * 
 	 * @param additionalFields Additional Fields
-	 * @param passwordValues Password Values
+	 * @param dymanicVariables Dynamic Variables
 	 * @return Prepared Additional Fields
 	 */
-	private Map<String, String> prepareAdditionalFields(List<AdditionalField> additionalFields, Map<String, String> passwordValues) {
+	private Map<String, String> prepareAdditionalFields(List<AdditionalField> additionalFields, Map<String, String> dymanicVariables) {
 		Map<String, String> fields = new LinkedHashMap<>();
 		for (AdditionalField additionalField : additionalFields) {
 			String fieldValue = additionalField.getFieldValue();
 			// Replace variables in additional field
-			fieldValue = StringSubstitutor.replace(fieldValue, passwordValues);
+			fieldValue = StringSubstitutor.replace(fieldValue, dymanicVariables);
 			fields.put(additionalField.getFieldName(), fieldValue);
+		}
+		return fields;
+	}
+
+	/**
+	 * Prepare Additional Headers
+	 * 
+	 * @param additionalHeaders Additional Headers
+	 * @param dymanicVariables Dynamic Variables
+	 * @return Prepared Additional Headers
+	 */
+	private Map<String, String> prepareAdditionalHeaders(List<AdditionalHeader> additionalHeaders, Map<String, String> dymanicVariables) {
+		Map<String, String> fields = new LinkedHashMap<>();
+		for (AdditionalHeader additionalHeader : additionalHeaders) {
+			String headerValue = additionalHeader.getHeaderValue();
+			// Replace variables in header value
+			headerValue = StringSubstitutor.replace(headerValue, dymanicVariables);
+			fields.put(additionalHeader.getHeaderName(), headerValue);
 		}
 		return fields;
 	}
@@ -344,11 +368,12 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * Execute HTTP GET Request
 	 * 
 	 * @param url URL
+	 * @param additionalHeaders Additional Headers
 	 * @param client HTTP Client
 	 * @return Container Page
 	 * @throws IOException
 	 */
-	public ContainerPage executeHTTPGetRequest(String url, CloseableHttpClient client) throws IOException {
+	public ContainerPage executeHTTPGetRequest(String url, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
 		HttpGet method = null;
 		try {
 			url = HTTPUtil.encodeURL(url);
@@ -359,13 +384,17 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			method.setConfig(requestConfigBuilder.build());
 			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
+			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+				method.setHeader(entry.getKey(), entry.getValue());
+			}
+
 			HttpContext context = new BasicHttpContext();
 			try (CloseableHttpResponse response = client.execute(method, context)) {
 				int statusCode = response.getStatusLine().getStatusCode();
 
 				if (statusCode < 200 || statusCode >= 400) {
 					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine());
+					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 				}
 
 				String redirectedURL = null;
@@ -395,7 +424,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				} else {
 					page = "";
 				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine());
+				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 			}
 		} finally {
 			if (method != null) {
@@ -410,11 +439,12 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param url URL
 	 * @param multiPart True if multipart/form-data should be used, false if application/x-www-form-urlencoded should be used
 	 * @param fields Fields
+	 * @param additionalHeaders Additional Headers
 	 * @param client HTTP Client
 	 * @return Container Page
 	 * @throws IOException
 	 */
-	public ContainerPage executeHTTPPostRequest(String url, boolean multiPart, Map<String, String> fields, CloseableHttpClient client) throws IOException {
+	public ContainerPage executeHTTPPostRequest(String url, boolean multiPart, Map<String, String> fields, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
 		HttpPost method = null;
 		try {
 			url = HTTPUtil.encodeURL(url);
@@ -424,6 +454,10 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			requestConfigBuilder.setMaxRedirects(10);
 			method.setConfig(requestConfigBuilder.build());
 			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+
+			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+				method.setHeader(entry.getKey(), entry.getValue());
+			}
 
 			if (multiPart) {
 				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -446,7 +480,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 				if (statusCode < 200 || statusCode >= 400) {
 					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine());
+					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 				}
 
 				String redirectedURL = null;
@@ -476,7 +510,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				} else {
 					page = "";
 				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine());
+				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 			}
 		} finally {
 			if (method != null) {
@@ -493,13 +527,14 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param file File
 	 * @param fileName File name
 	 * @param fields Fields
+	 * @param additionalHeaders Additional Headers
 	 * @param listener Listener or null
 	 * @param client HTTP Client
 	 * @return Container Page
 	 * @throws IOException
 	 */
-	public ContainerPage executeHTTPPostRequest(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, UploadProgressListener listener,
-			CloseableHttpClient client) throws IOException {
+	public ContainerPage executeHTTPPostRequest(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, Map<String, String> additionalHeaders,
+			UploadProgressListener listener, CloseableHttpClient client) throws IOException {
 		HttpPost method = null;
 		try {
 			url = HTTPUtil.encodeURL(url);
@@ -509,6 +544,10 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			requestConfigBuilder.setMaxRedirects(10);
 			method.setConfig(requestConfigBuilder.build());
 			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+
+			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+				method.setHeader(entry.getKey(), entry.getValue());
+			}
 
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 			for (Map.Entry<String, String> entry : fields.entrySet()) {
@@ -532,7 +571,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 				if (statusCode < 200 || statusCode >= 400) {
 					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine());
+					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 				}
 
 				String redirectedURL = null;
@@ -562,7 +601,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				} else {
 					page = "";
 				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine());
+				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
 			}
 		} finally {
 			if (method != null) {
@@ -619,12 +658,12 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
 				String page = readStream(conn.getInputStream());
-				return new ContainerPage(true, page, "", null);
+				return new ContainerPage(true, page, "", null, new ArrayList<>());
 			}
 		} catch (Exception e) {
 			logger.error("xxx", e);
 		}
-		return new ContainerPage(false, "", "", null);
+		return new ContainerPage(false, "", "", null, new ArrayList<>());
 	}
 
 	private static String readStream(InputStream in) {

@@ -1,5 +1,8 @@
 package ch.supertomcat.bilderuploader.upload;
 
+import java.util.List;
+
+import org.apache.http.Header;
 import org.apache.http.StatusLine;
 
 /**
@@ -27,18 +30,25 @@ public class ContainerPage {
 	private final StatusLine statusLine;
 
 	/**
+	 * Response Headers
+	 */
+	private final List<Header> responseHeaders;
+
+	/**
 	 * Constructor
 	 * 
 	 * @param success True if successful, false otherwise
 	 * @param page Page Source Code
 	 * @param redirectedURL Redirected URL if request was redirected or null
 	 * @param statusLine Status Line
+	 * @param responseHeaders Response Headers
 	 */
-	public ContainerPage(boolean success, String page, String redirectedURL, StatusLine statusLine) {
+	public ContainerPage(boolean success, String page, String redirectedURL, StatusLine statusLine, List<Header> responseHeaders) {
 		this.success = success;
 		this.page = page;
 		this.redirectedURL = redirectedURL;
 		this.statusLine = statusLine;
+		this.responseHeaders = responseHeaders;
 	}
 
 	/**
@@ -78,6 +88,15 @@ public class ContainerPage {
 	 */
 	public StatusLine getStatusLine() {
 		return statusLine;
+	}
+
+	/**
+	 * Returns the responseHeaders
+	 * 
+	 * @return responseHeaders
+	 */
+	public List<Header> getResponseHeaders() {
+		return responseHeaders;
 	}
 
 	@Override

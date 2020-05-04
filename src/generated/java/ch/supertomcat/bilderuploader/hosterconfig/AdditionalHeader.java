@@ -11,20 +11,21 @@ package ch.supertomcat.bilderuploader.hosterconfig;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java-Klasse für RegexReplacementVariableStore complex type.
+ * <p>Java-Klasse für anonymous complex type.
  * 
  * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
  * 
  * <pre>
- * &lt;complexType name="RegexReplacementVariableStore">
+ * &lt;complexType>
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;attribute name="variableName" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
- *       &lt;attribute name="replacement" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="headerName" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="headerValue" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -33,60 +34,61 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "RegexReplacementVariableStore")
-public class RegexReplacementVariableStore {
+@XmlType(name = "")
+@XmlRootElement(name = "additionalHeader")
+public class AdditionalHeader {
 
-    @XmlAttribute(name = "variableName", required = true)
-    protected String variableName;
-    @XmlAttribute(name = "replacement", required = true)
-    protected String replacement;
+    @XmlAttribute(name = "headerName", required = true)
+    protected String headerName;
+    @XmlAttribute(name = "headerValue", required = true)
+    protected String headerValue;
 
     /**
-     * Ruft den Wert der variableName-Eigenschaft ab.
+     * Ruft den Wert der headerName-Eigenschaft ab.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getVariableName() {
-        return variableName;
+    public String getHeaderName() {
+        return headerName;
     }
 
     /**
-     * Legt den Wert der variableName-Eigenschaft fest.
+     * Legt den Wert der headerName-Eigenschaft fest.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setVariableName(String value) {
-        this.variableName = value;
+    public void setHeaderName(String value) {
+        this.headerName = value;
     }
 
     /**
-     * Ruft den Wert der replacement-Eigenschaft ab.
+     * Ruft den Wert der headerValue-Eigenschaft ab.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getReplacement() {
-        return replacement;
+    public String getHeaderValue() {
+        return headerValue;
     }
 
     /**
-     * Legt den Wert der replacement-Eigenschaft fest.
+     * Legt den Wert der headerValue-Eigenschaft fest.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setReplacement(String value) {
-        this.replacement = value;
+    public void setHeaderValue(String value) {
+        this.headerValue = value;
     }
 
 }
