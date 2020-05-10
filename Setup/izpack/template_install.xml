@@ -65,6 +65,9 @@
 				<include name="*.xsd" />
 				<include name="*.xml" />
 			</fileset>
+			<fileset dir="../../hostIcons" targetdir="$INSTALL_PATH/hostIcons">
+				<include name="*" />
+			</fileset>
 		</pack>
 		
 		<pack name="Templates" required="yes" id="package.templates">

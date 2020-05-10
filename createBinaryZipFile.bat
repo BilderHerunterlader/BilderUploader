@@ -10,6 +10,7 @@ del v.txt
 
 ::version einsetzen und zip datei erstellen
 "%programfiles%\7-zip\7z.exe" a -xr@excludelist.txt -tzip BilderUploader%version%Binary.zip hosts\*.* -r
+"%programfiles%\7-zip\7z.exe" a -xr@excludelist.txt -tzip BilderUploader%version%Binary.zip hostIcons\*.* -r
 "%programfiles%\7-zip\7z.exe" a -tzip BilderUploader%version%Binary.zip lib\*.jar -r
 "%programfiles%\7-zip\7z.exe" a -xr@excludelist.txt -tzip BilderUploader%version%Binary.zip templates\* -r
 "%programfiles%\7-zip\7z.exe" a -tzip BilderUploader%version%Binary.zip BilderUploader.jar

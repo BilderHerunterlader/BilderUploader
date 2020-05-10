@@ -107,6 +107,9 @@ Section !$(SecMainName) SecMain
 	File "..\hosts\*.xsd"
 	File "..\hosts\*.xml"
 	
+	SetOutPath "$INSTDIR\hostIcons"
+	File "..\hostIcons\*"
+	
 	SetOutPath "$INSTDIR\templates"
 	File /r "..\templates\*"
 	
@@ -180,6 +183,7 @@ Section "Uninstall"
 		Delete "$INSTDIR\hosts\*.xsd"
 		Delete "$INSTDIR\hosts\*.xml"
 		RMDir "$INSTDIR\hosts"
+		RMDir "$INSTDIR\hostIcons"
 		RMDir /r "$INSTDIR\templates"
 		Goto next
 	false:
