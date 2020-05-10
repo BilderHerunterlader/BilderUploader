@@ -34,8 +34,6 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element ref="{}additionalField" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{}additionalHeader" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="failureRegex" type="{}Regex" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="regex" type="{}RegexAndVariableStore" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="cookieVariableStore" type="{}CookieVariableStore" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -51,12 +49,10 @@ import javax.xml.bind.annotation.XmlType;
     "formContentType",
     "additionalField",
     "additionalHeader",
-    "failureRegex",
-    "regex",
-    "cookieVariableStore"
+    "failureRegex"
 })
-@XmlRootElement(name = "prepareUploadStep")
-public class PrepareUploadStep {
+@XmlRootElement(name = "prepareResultStep")
+public class PrepareResultStep {
 
     @XmlElement(required = true)
     protected String url;
@@ -67,8 +63,6 @@ public class PrepareUploadStep {
     protected List<AdditionalField> additionalField;
     protected List<AdditionalHeader> additionalHeader;
     protected List<Regex> failureRegex;
-    protected List<RegexAndVariableStore> regex;
-    protected List<CookieVariableStore> cookieVariableStore;
 
     /**
      * Ruft den Wert der url-Eigenschaft ab.
@@ -227,64 +221,6 @@ public class PrepareUploadStep {
             failureRegex = new ArrayList<Regex>();
         }
         return this.failureRegex;
-    }
-
-    /**
-     * Gets the value of the regex property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the regex property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getRegex().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link RegexAndVariableStore }
-     * 
-     * 
-     */
-    public List<RegexAndVariableStore> getRegex() {
-        if (regex == null) {
-            regex = new ArrayList<RegexAndVariableStore>();
-        }
-        return this.regex;
-    }
-
-    /**
-     * Gets the value of the cookieVariableStore property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the cookieVariableStore property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getCookieVariableStore().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link CookieVariableStore }
-     * 
-     * 
-     */
-    public List<CookieVariableStore> getCookieVariableStore() {
-        if (cookieVariableStore == null) {
-            cookieVariableStore = new ArrayList<CookieVariableStore>();
-        }
-        return this.cookieVariableStore;
     }
 
 }

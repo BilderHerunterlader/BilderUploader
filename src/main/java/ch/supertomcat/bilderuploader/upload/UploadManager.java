@@ -51,6 +51,7 @@ import ch.supertomcat.bilderuploader.hosterconfig.HTTPMethod;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
 import ch.supertomcat.bilderuploader.hosterconfig.Param;
 import ch.supertomcat.bilderuploader.hosterconfig.PasswordVariable;
+import ch.supertomcat.bilderuploader.hosterconfig.PrepareResultStep;
 import ch.supertomcat.bilderuploader.hosterconfig.PrepareUploadStep;
 import ch.supertomcat.bilderuploader.hosterconfig.Regex;
 import ch.supertomcat.bilderuploader.hosterconfig.RegexAndReplacement;
@@ -149,41 +150,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			List<String> prepareUploadResultTexts = new ArrayList<>();
 			for (PrepareUploadStep prepareUploadStep : hoster.getPrepareUploadStep()) {
-				String prepareUploadURL = StringSubstitutor.replace(prepareUploadStep.getUrl(), dymanicVariables);
-				HTTPMethod httpMethod = prepareUploadStep.getHttpMethod();
-				logger.info("Prepare Upload Step: URL: {}, HTTP-Method: {}", prepareUploadURL, httpMethod);
-				ContainerPage prepareUploadContainerPage;
-				Map<String, String> additionalHeaders = prepareAdditionalHeaders(prepareUploadStep.getAdditionalHeader(), dymanicVariables);
-				if (httpMethod == HTTPMethod.POST) {
-					Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareUploadStep.getAdditionalField(), dymanicVariables);
-					boolean multiPart = prepareUploadStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
-					prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, additionalHeaders, client);
-				} else {
-					prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, additionalHeaders, client);
-				}
-
-				if (prepareUploadContainerPage.isSuccess()) {
-					logger.info("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
-					checkForFailure(prepareUploadStep.getFailureRegex(), prepareUploadContainerPage, listener);
-					prepareUploadResultTexts.addAll(getPrepareUploadResults(prepareUploadStep, prepareUploadContainerPage, dymanicVariables));
-
-					// TODO Move to new method
-					for (CookieVariableStore cookieVariableStore : prepareUploadStep.getCookieVariableStore()) {
-						// TODO Log missing cookie
-						for (Cookie cookie : cookieStore.getCookies()) {
-							if (cookie.getName().equals(cookieVariableStore.getCookieName())) {
-								dymanicVariables.put(cookieVariableStore.getVariableName(), cookie.getValue());
-								break;
-							}
-						}
-					}
-
-					logger.info("Dynamic Variables after Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, dymanicVariables);
-				} else {
-					logger.error("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
-					listener.statusChanged(UploadFileState.FAILED);
-					throw new IOException("Prepare Upload Failed: " + prepareUploadContainerPage.getStatusLine());
-				}
+				prepareUpload(prepareUploadStep, dymanicVariables, prepareUploadResultTexts, client, cookieStore, listener);
 			}
 
 			logger.info("Dynamic Variables after Prepare Upload: {}", dymanicVariables);
@@ -204,18 +171,109 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			if (uploadContainerPage.isSuccess()) {
 				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
 				checkForFailure(uploadStep.getFailureRegex(), uploadContainerPage, listener);
-				UploadResultStep uploadResultStep = hoster.getUploadResultStep();
-				listener.statusChanged(UploadFileState.COMPLETE);
-				List<String> uploadResultTexts = getResultTexts(uploadResultStep, uploadContainerPage);
-				if (uploadResultTexts.isEmpty()) {
-					logger.info("No Upload Result Texts found for Upload Step: URL={}", uploadURL);
-					throw new IOException("Upload Failed: No Upload Result Texts found");
-				}
-				return new FileUploadResult(prepareUploadResultTexts, uploadResultTexts);
 			} else {
 				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
 				listener.statusChanged(UploadFileState.FAILED);
 				throw new IOException("Upload Failed: " + uploadContainerPage.getStatusLine());
+			}
+
+			logger.info("Dynamic Variables after Upload: {}", dymanicVariables);
+
+			ContainerPage prepareResultContainerPage = null;
+			for (PrepareResultStep prepareResultStep : hoster.getPrepareResultStep()) {
+				prepareResultContainerPage = prepareResult(prepareResultStep, dymanicVariables, client, listener);
+			}
+
+			logger.info("Dynamic Variables after Prepare Result: {}", dymanicVariables);
+
+			UploadResultStep uploadResultStep = hoster.getUploadResultStep();
+			List<String> uploadResultTexts;
+			if (prepareResultContainerPage != null) {
+				uploadResultTexts = getResultTexts(uploadResultStep, prepareResultContainerPage);
+			} else {
+				uploadResultTexts = getResultTexts(uploadResultStep, uploadContainerPage);
+			}
+
+			if (uploadResultTexts.isEmpty()) {
+				logger.info("No Upload Result Texts found for Upload Step: URL={}", uploadURL);
+				throw new IOException("Upload Failed: No Upload Result Texts found");
+			}
+
+			listener.statusChanged(UploadFileState.COMPLETE);
+			return new FileUploadResult(prepareUploadResultTexts, uploadResultTexts);
+		}
+	}
+
+	private void prepareUpload(PrepareUploadStep prepareUploadStep, Map<String, String> dymanicVariables, List<String> prepareUploadResultTexts, CloseableHttpClient client, CookieStore cookieStore,
+			UploadProgressListener listener) throws IOException {
+		String prepareUploadURL = StringSubstitutor.replace(prepareUploadStep.getUrl(), dymanicVariables);
+		HTTPMethod httpMethod = prepareUploadStep.getHttpMethod();
+		logger.info("Prepare Upload Step: URL: {}, HTTP-Method: {}", prepareUploadURL, httpMethod);
+		ContainerPage prepareUploadContainerPage;
+		Map<String, String> additionalHeaders = prepareAdditionalHeaders(prepareUploadStep.getAdditionalHeader(), dymanicVariables);
+		if (httpMethod == HTTPMethod.POST) {
+			Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareUploadStep.getAdditionalField(), dymanicVariables);
+			boolean multiPart = prepareUploadStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
+			prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, additionalHeaders, client);
+		} else {
+			prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, additionalHeaders, client);
+		}
+
+		if (prepareUploadContainerPage.isSuccess()) {
+			logger.info("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
+			checkForFailure(prepareUploadStep.getFailureRegex(), prepareUploadContainerPage, listener);
+			prepareUploadResultTexts.addAll(getPrepareUploadResults(prepareUploadStep, prepareUploadContainerPage, dymanicVariables));
+
+			storeCookiesToVariables(prepareUploadStep.getCookieVariableStore(), dymanicVariables, cookieStore);
+
+			logger.info("Dynamic Variables after Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, dymanicVariables);
+		} else {
+			logger.error("Container-Page for Prepare Upload Step: URL={}, HTTP-Method={}: {}", prepareUploadURL, httpMethod, prepareUploadContainerPage);
+			listener.statusChanged(UploadFileState.FAILED);
+			throw new IOException("Prepare Upload Failed: " + prepareUploadContainerPage.getStatusLine());
+		}
+	}
+
+	private ContainerPage prepareResult(PrepareResultStep prepareResultStep, Map<String, String> dymanicVariables, CloseableHttpClient client, UploadProgressListener listener) throws IOException {
+		String prepareResultURL = StringSubstitutor.replace(prepareResultStep.getUrl(), dymanicVariables);
+		HTTPMethod httpMethod = prepareResultStep.getHttpMethod();
+		logger.info("Prepare Result Step: URL: {}, HTTP-Method: {}", prepareResultURL, httpMethod);
+		ContainerPage prepareResultContainerPage;
+		Map<String, String> additionalHeaders = prepareAdditionalHeaders(prepareResultStep.getAdditionalHeader(), dymanicVariables);
+		if (httpMethod == HTTPMethod.POST) {
+			Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareResultStep.getAdditionalField(), dymanicVariables);
+			boolean multiPart = prepareResultStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
+			prepareResultContainerPage = executeHTTPPostRequest(prepareResultURL, multiPart, prepareUploadFields, additionalHeaders, client);
+		} else {
+			prepareResultContainerPage = executeHTTPGetRequest(prepareResultURL, additionalHeaders, client);
+		}
+
+		if (prepareResultContainerPage.isSuccess()) {
+			logger.info("Container-Page for Prepare Result Step: URL={}, HTTP-Method={}: {}", prepareResultURL, httpMethod, prepareResultContainerPage);
+			checkForFailure(prepareResultStep.getFailureRegex(), prepareResultContainerPage, listener);
+
+			logger.info("Dynamic Variables after Prepare Result Step: URL={}, HTTP-Method={}: {}", prepareResultURL, httpMethod, dymanicVariables);
+			return prepareResultContainerPage;
+		} else {
+			logger.error("Container-Page for Prepare Result Step: URL={}, HTTP-Method={}: {}", prepareResultURL, httpMethod, prepareResultContainerPage);
+			listener.statusChanged(UploadFileState.FAILED);
+			throw new IOException("Prepare Upload Failed: " + prepareResultContainerPage.getStatusLine());
+		}
+	}
+
+	private void storeCookiesToVariables(List<CookieVariableStore> cookieVariableStoreList, Map<String, String> dymanicVariables, CookieStore cookieStore) {
+		for (CookieVariableStore cookieVariableStore : cookieVariableStoreList) {
+			boolean cookieFound = false;
+			for (Cookie cookie : cookieStore.getCookies()) {
+				if (cookie.getName().equals(cookieVariableStore.getCookieName())) {
+					dymanicVariables.put(cookieVariableStore.getVariableName(), cookie.getValue());
+					cookieFound = true;
+					break;
+				}
+			}
+
+			if (!cookieFound) {
+				logger.error("Cookie was not found: {}", cookieVariableStore.getCookieName());
 			}
 		}
 	}

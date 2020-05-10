@@ -2,7 +2,7 @@
 // Diese Datei wurde mit der JavaTM Architecture for XML Binding(JAXB) Reference Implementation, v2.2.8-b130911.1802 generiert 
 // Siehe <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Änderungen an dieser Datei gehen bei einer Neukompilierung des Quellschemas verloren. 
-// Generiert: 2020.05.05 um 01:18:08 AM CEST 
+// Generiert: 2020.05.10 um 11:15:05 AM CEST 
 //
 
 
@@ -38,6 +38,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element ref="{}generateRandom" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{}prepareUploadStep" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{}uploadStep"/>
+ *         &lt;element ref="{}prepareResultStep" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{}uploadResultStep"/>
  *         &lt;element name="passwordVariable" type="{}PasswordVariable" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
@@ -62,6 +63,7 @@ import javax.xml.bind.annotation.XmlType;
     "generateRandom",
     "prepareUploadStep",
     "uploadStep",
+    "prepareResultStep",
     "uploadResultStep",
     "passwordVariable"
 })
@@ -79,6 +81,7 @@ public class Hoster {
     protected List<PrepareUploadStep> prepareUploadStep;
     @XmlElement(required = true)
     protected UploadStep uploadStep;
+    protected List<PrepareResultStep> prepareResultStep;
     @XmlElement(required = true)
     protected UploadResultStep uploadResultStep;
     protected List<PasswordVariable> passwordVariable;
@@ -335,6 +338,35 @@ public class Hoster {
      */
     public void setUploadStep(UploadStep value) {
         this.uploadStep = value;
+    }
+
+    /**
+     * Gets the value of the prepareResultStep property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the prepareResultStep property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getPrepareResultStep().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link PrepareResultStep }
+     * 
+     * 
+     */
+    public List<PrepareResultStep> getPrepareResultStep() {
+        if (prepareResultStep == null) {
+            prepareResultStep = new ArrayList<PrepareResultStep>();
+        }
+        return this.prepareResultStep;
     }
 
     /**

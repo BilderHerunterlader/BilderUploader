@@ -30,7 +30,8 @@
 				<!-- Required Upload Step -->
 				<xs:element ref="uploadStep" />
 				
-				<!-- TODO Prepare Result -->
+				<!-- Optional Steps to prepare the Result (e.g. Redirect to Result) -->
+				<xs:element ref="prepareResultStep" minOccurs="0" maxOccurs="unbounded" />
 				
 				<!-- Required Upload Result Step -->
 				<xs:element ref="uploadResultStep" />
@@ -107,6 +108,8 @@
 				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
 				<!-- Optional Regular Expressions which can be used to change the filename, because some hosts may not accept certain characters or too long filenames -->
 				<xs:element name="filenameRegex" type="RegexAndReplacement" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional Regular Expressions which are used on HTTP Response Content -->
+				<xs:element name="regex" type="RegexAndVariableStore" minOccurs="0" maxOccurs="unbounded" />
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -128,6 +131,26 @@
 			<xs:attribute name="headerName" type="xs:string" use="required" />
 			<!-- Required Field Value -->
 			<xs:attribute name="headerValue" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- Prepare Result -->
+	<xs:element name="prepareResultStep">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Required URL -->
+				<xs:element name="url" type="xs:string" />
+				<!-- Optional HTTP Method (Default is GET) -->
+				<xs:element name="httpMethod" type="HTTPMethod" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Form Content Type (Only used when HTTP Method is POST, Default is application/x-www-form-urlencoded) -->
+				<xs:element name="formContentType" type="FormContentType" minOccurs="0" maxOccurs="1" />
+				<!-- Optional Additional Fields (Only used when HTTP Method is POST) -->
+				<xs:element ref="additionalField" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optional HTTP Header Values -->
+				<xs:element ref="additionalHeader" minOccurs="0" maxOccurs="unbounded" />
+				<!-- Optianol Failure Regular Expressions, which will treat the upload as Failure if the Pattern is found -->
+				<xs:element name="failureRegex" type="Regex" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
 	

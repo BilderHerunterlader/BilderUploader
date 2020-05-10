@@ -2,7 +2,7 @@
 // Diese Datei wurde mit der JavaTM Architecture for XML Binding(JAXB) Reference Implementation, v2.2.8-b130911.1802 generiert 
 // Siehe <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Änderungen an dieser Datei gehen bei einer Neukompilierung des Quellschemas verloren. 
-// Generiert: 2020.05.05 um 01:18:08 AM CEST 
+// Generiert: 2020.05.10 um 11:15:05 AM CEST 
 //
 
 
@@ -33,6 +33,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element ref="{}additionalHeader" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="failureRegex" type="{}Regex" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="filenameRegex" type="{}RegexAndReplacement" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="regex" type="{}RegexAndVariableStore" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -48,7 +49,8 @@ import javax.xml.bind.annotation.XmlType;
     "additionalField",
     "additionalHeader",
     "failureRegex",
-    "filenameRegex"
+    "filenameRegex",
+    "regex"
 })
 @XmlRootElement(name = "uploadStep")
 public class UploadStep {
@@ -61,6 +63,7 @@ public class UploadStep {
     protected List<AdditionalHeader> additionalHeader;
     protected List<Regex> failureRegex;
     protected List<RegexAndReplacement> filenameRegex;
+    protected List<RegexAndVariableStore> regex;
 
     /**
      * Ruft den Wert der url-Eigenschaft ab.
@@ -224,6 +227,35 @@ public class UploadStep {
             filenameRegex = new ArrayList<RegexAndReplacement>();
         }
         return this.filenameRegex;
+    }
+
+    /**
+     * Gets the value of the regex property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the regex property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getRegex().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link RegexAndVariableStore }
+     * 
+     * 
+     */
+    public List<RegexAndVariableStore> getRegex() {
+        if (regex == null) {
+            regex = new ArrayList<RegexAndVariableStore>();
+        }
+        return this.regex;
     }
 
 }

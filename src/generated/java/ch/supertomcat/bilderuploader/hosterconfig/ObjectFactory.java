@@ -2,7 +2,7 @@
 // Diese Datei wurde mit der JavaTM Architecture for XML Binding(JAXB) Reference Implementation, v2.2.8-b130911.1802 generiert 
 // Siehe <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Änderungen an dieser Datei gehen bei einer Neukompilierung des Quellschemas verloren. 
-// Generiert: 2020.05.05 um 01:18:08 AM CEST 
+// Generiert: 2020.05.10 um 11:15:05 AM CEST 
 //
 
 
@@ -69,6 +69,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PrepareResultStep }
+     * 
+     */
+    public PrepareResultStep createPrepareResultStep() {
+        return new PrepareResultStep();
+    }
+
+    /**
      * Create an instance of {@link AdditionalHeader }
      * 
      */
@@ -77,19 +85,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PrepareUploadStep }
-     * 
-     */
-    public PrepareUploadStep createPrepareUploadStep() {
-        return new PrepareUploadStep();
-    }
-
-    /**
      * Create an instance of {@link Regex }
      * 
      */
     public Regex createRegex() {
         return new Regex();
+    }
+
+    /**
+     * Create an instance of {@link PrepareUploadStep }
+     * 
+     */
+    public PrepareUploadStep createPrepareUploadStep() {
+        return new PrepareUploadStep();
     }
 
     /**
