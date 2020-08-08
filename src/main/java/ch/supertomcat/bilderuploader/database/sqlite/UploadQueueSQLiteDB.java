@@ -59,7 +59,8 @@ public class UploadQueueSQLiteDB extends SQLiteDB<UploadFile> {
 	 * @throws JAXBException
 	 */
 	public UploadQueueSQLiteDB(String databaseFile, SettingsManager settingsManager, HosterManager hosterManager) throws JAXBException {
-		super(databaseFile, "bu_uploadqueue", settingsManager.getSettings().isBackupDbOnStart());
+		super(databaseFile, "bu_uploadqueue", settingsManager.getSettings().isBackupDbOnStart(), true, 5000000);
+		// TODO Settings for defrag
 		this.hosterManager = hosterManager;
 
 		this.jaxbContext = JAXBContext.newInstance(FileUploadResult.class);

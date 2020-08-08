@@ -48,7 +48,6 @@ import org.apache.velocity.tools.generic.EscapeTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.supertomcat.bilderuploader.gui.SpringUtilities;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.bilderuploader.templates.TemplateManager;
 import ch.supertomcat.bilderuploader.templates.UploadedFilesContainer;
@@ -63,6 +62,7 @@ import ch.supertomcat.supertomcatutils.gui.Localization;
 import ch.supertomcat.supertomcatutils.gui.combobox.renderer.FilenameComboBoxRenderer;
 import ch.supertomcat.supertomcatutils.gui.copyandpaste.JTextComponentCopyAndPaste;
 import ch.supertomcat.supertomcatutils.gui.dialog.FileDialogUtil;
+import ch.supertomcat.supertomcatutils.gui.layout.SpringUtilities;
 import ch.supertomcat.supertomcatutils.io.FileUtil;
 import de.sciss.syntaxpane.DefaultSyntaxKit;
 
