@@ -171,8 +171,8 @@ public class UploadQueueManager extends QueueManagerBase<UploadFile, FileUploadR
 	}
 
 	@Override
-	protected void updateOpenSlots() {
-		super.updateOpenSlots();
+	protected void updateOpenSlots(boolean taskFinished) {
+		super.updateOpenSlots(taskFinished);
 		for (UploadQueueManagerListener listener : listeners) {
 			listener.queueChanged(queue.size(), openSlots, maxConnectionCount);
 		}
