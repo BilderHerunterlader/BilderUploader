@@ -679,6 +679,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param listener Listener or null
 	 * @return Container Page
 	 */
+	@SuppressWarnings("resource")
 	public ContainerPage executeURLConnectionUpload(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, UploadProgressListener listener) {
 		try {
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();

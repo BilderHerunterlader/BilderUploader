@@ -206,7 +206,6 @@ public class OutputGeneratorDialog extends JDialog {
 	 * @param settingsManager Settings Manager
 	 * @param files Files
 	 */
-	@SuppressWarnings("unchecked")
 	public OutputGeneratorDialog(Window owner, TemplateManager templateManager, TitleFilenameParserManager titleFilenameParserManager, SettingsManager settingsManager, List<UploadFile> files) {
 		super(owner, Localization.getString("OutputGenerator"));
 		this.templateManager = templateManager;

@@ -89,35 +89,51 @@ public class DownloadHostIconsManualTest {
 		assertTrue(overallSuccess);
 	}
 
+	@SuppressWarnings("resource")
 	private boolean downloadHosterIcon(String hosterIconURL, File outputFile) throws IOException {
 		URL url = new URL(hosterIconURL);
-		HttpURLConnection con = (HttpURLConnection)url.openConnection();
-		con.setConnectTimeout(10000);
-		con.setReadTimeout(60000);
-		int responseCode = con.getResponseCode();
-		if (responseCode == HttpURLConnection.HTTP_OK) {
-			writeToFile(con.getInputStream(), outputFile);
-			return true;
-		} else {
-			readAll(con.getInputStream());
-			readAll(con.getErrorStream());
-			return false;
+		HttpURLConnection con = null;
+		try {
+			con = (HttpURLConnection)url.openConnection();
+			con.setConnectTimeout(10000);
+			con.setReadTimeout(60000);
+			int responseCode = con.getResponseCode();
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				writeToFile(con.getInputStream(), outputFile);
+				return true;
+			} else {
+				readAll(con.getInputStream());
+				readAll(con.getErrorStream());
+				return false;
+			}
+		} finally {
+			if (con != null) {
+				con.disconnect();
+			}
 		}
 	}
 
+	@SuppressWarnings("resource")
 	private String downloadHosterPage(String hosterURL) throws IOException {
 		URL url = new URL(hosterURL);
-		HttpURLConnection con = (HttpURLConnection)url.openConnection();
-		con.setConnectTimeout(10000);
-		con.setReadTimeout(60000);
-		int responseCode = con.getResponseCode();
-		if (responseCode == HttpURLConnection.HTTP_OK) {
-			String encoding = con.getContentEncoding();
-			return readToString(con.getInputStream(), encoding);
-		} else {
-			readAll(con.getInputStream());
-			readAll(con.getErrorStream());
-			return null;
+		HttpURLConnection con = null;
+		try {
+			con = (HttpURLConnection)url.openConnection();
+			con.setConnectTimeout(10000);
+			con.setReadTimeout(60000);
+			int responseCode = con.getResponseCode();
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				String encoding = con.getContentEncoding();
+				return readToString(con.getInputStream(), encoding);
+			} else {
+				readAll(con.getInputStream());
+				readAll(con.getErrorStream());
+				return null;
+			}
+		} finally {
+			if (con != null) {
+				con.disconnect();
+			}
 		}
 	}
 

@@ -65,7 +65,6 @@ public class HosterSelectionDialog extends JDialog implements ActionListener {
 		init(hosters, defaultHoster);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void init(List<Hoster> hosters, Hoster defaultHoster) {
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setTitle(Localization.getString("ChooseHoster"));

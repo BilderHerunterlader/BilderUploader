@@ -100,7 +100,6 @@ public class MainMenuBar {
 	 * @param hosterManager Hoster Manager
 	 * @param listeners Main Window Listeners
 	 */
-	@SuppressWarnings("unchecked")
 	public MainMenuBar(MainWindow mainWindow, SettingsManager settingsManager, ProxyManager proxyManager, HosterManager hosterManager, List<MainWindowListener> listeners) {
 		menuFile.add(itemExit);
 

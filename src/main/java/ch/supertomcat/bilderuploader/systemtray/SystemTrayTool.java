@@ -16,14 +16,16 @@ import org.slf4j.LoggerFactory;
 
 import ch.supertomcat.bilderuploader.gui.MainWindow;
 import ch.supertomcat.bilderuploader.gui.MainWindowListener;
+import ch.supertomcat.bilderuploader.queue.UploadQueueManagerListener;
 import ch.supertomcat.bilderuploader.settings.BUSettingsListener;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.supertomcatutils.gui.Icons;
+import ch.supertomcat.supertomcatutils.gui.Localization;
 
 /**
  * Class which handles the SystemTray
  */
-public class SystemTrayTool {
+public class SystemTrayTool implements UploadQueueManagerListener {
 	/**
 	 * Logger
 	 */
@@ -169,13 +171,13 @@ public class SystemTrayTool {
 	/**
 	 * Display Notification Message
 	 * 
-	 * TODO Implement listener from queuemanager to detect downloads complete
-	 * 
 	 * @param title Title
 	 * @param message Message
 	 */
 	private void displayMessage(String title, String message) {
-		trayIcon.displayMessage(title, message, TrayIcon.MessageType.INFO);
+		if (trayIcon != null && displayNotifications) {
+			trayIcon.displayMessage(title, message, TrayIcon.MessageType.INFO);
+		}
 	}
 
 	/**
@@ -185,5 +187,30 @@ public class SystemTrayTool {
 	 */
 	public static boolean isTraySupported() {
 		return SystemTray.isSupported();
+	}
+
+	@Override
+	public void queueChanged(int queue, int openSlots, int maxSlots) {
+		// Nothing to do
+	}
+
+	@Override
+	public void sessionUploadedFilesChanged(int count) {
+		// Nothing to do
+	}
+
+	@Override
+	public void sessionUploadedBytesChanged(long count) {
+		// Nothing to do
+	}
+
+	@Override
+	public void uploadsComplete(int queue, int openSlots, int maxSlots) {
+		displayMessage(Localization.getString("DownloadsComplete"), "");
+	}
+
+	@Override
+	public void totalUploadRateCalculated(double rate) {
+		// Nothing to do
 	}
 }

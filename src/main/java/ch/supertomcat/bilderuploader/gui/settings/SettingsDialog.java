@@ -484,7 +484,6 @@ public class SettingsDialog extends JDialog {
 	 * @param settingsManager Settings Manager
 	 * @param proxyManager Proxy Manager
 	 */
-	@SuppressWarnings("unchecked")
 	public SettingsDialog(MainWindow owner, SettingsManager settingsManager, ProxyManager proxyManager) {
 		this.settingsManager = settingsManager;
 		this.proxyManager = proxyManager;

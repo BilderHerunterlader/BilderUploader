@@ -213,6 +213,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	/**
 	 * File Column Model Index
 	 */
+	@SuppressWarnings("unused")
 	private final int fileColumnModelIndex = jtQueue.getColumn("File").getModelIndex();
 
 	/**
@@ -223,11 +224,13 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	/**
 	 * Size Column Model Index
 	 */
+	@SuppressWarnings("unused")
 	private final int sizeColumnModelIndex = jtQueue.getColumn("Size").getModelIndex();
 
 	/**
 	 * Added Column Model Index
 	 */
+	@SuppressWarnings("unused")
 	private final int addedColumnModelIndex = jtQueue.getColumn("Added").getModelIndex();
 
 	/**
