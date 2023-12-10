@@ -3,8 +3,8 @@ package ch.supertomcat.bilderuploader.upload;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.HttpEntityWrapper;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.HttpEntityWrapper;
 
 /**
  * Wrapper for HttpEntity to get the progress

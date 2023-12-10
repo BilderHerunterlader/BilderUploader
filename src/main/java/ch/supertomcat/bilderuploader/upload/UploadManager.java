@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,27 +19,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.text.StringSubstitutor;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.protocol.RedirectLocations;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.hc.core5.http.message.StatusLine;
+import org.apache.hc.core5.http.protocol.BasicHttpContext;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.http.protocol.HttpCoreContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +117,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @throws IOException
 	 */
 	public FileUploadResult uploadFile(Hoster hoster, File file, long fileSize, UploadProgressListener listener) throws IOException {
-		CookieStore cookieStore = new BasicCookieStore();
+		BasicCookieStore cookieStore = new BasicCookieStore();
 		try (CloseableHttpClient client = proxyManager.getHTTPClientBuilder().setDefaultCookieStore(cookieStore).build()) {
 			listener.statusChanged(UploadFileState.UPLOADING);
 			HosterSettings hosterSettings = settingsManager.getHosterSettings(hoster.getName());
@@ -423,6 +424,40 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	}
 
 	/**
+	 * Get Redirected URL
+	 * 
+	 * @param context Context
+	 * @return Redirected URL or null
+	 */
+	private String getRedirectedURL(HttpContext context) {
+		String redirectedURL = null;
+		HttpClientContext clientContext = HttpClientContext.adapt(context);
+		RedirectLocations redirectedLocations = clientContext.getRedirectLocations();
+		if (redirectedLocations != null) {
+			List<URI> redirectedLocationsURIList = redirectedLocations.getAll();
+			if (!redirectedLocationsURIList.isEmpty()) {
+				Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
+				if (redirectedRequest instanceof HttpUriRequest) {
+					try {
+						URI redirectedURI = ((HttpUriRequest)redirectedRequest).getUri();
+						if (redirectedURI.isAbsolute()) {
+							redirectedURL = redirectedURI.toString();
+						} else {
+							/*
+							 * TODO Implement with httpclient5. Same code as for Version 4 does not work anymore.
+							 */
+							logger.error("Could not determine redirect URI, because it is not absolute: {}", redirectedURI);
+						}
+					} catch (URISyntaxException e) {
+						logger.error("Could not determine redirection", e);
+					}
+				}
+			}
+		}
+		return redirectedURL;
+	}
+
+	/**
 	 * Execute HTTP GET Request
 	 * 
 	 * @param url URL
@@ -431,64 +466,43 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @return Container Page
 	 * @throws IOException
 	 */
+	@SuppressWarnings("resource")
 	public ContainerPage executeHTTPGetRequest(String url, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
-		HttpGet method = null;
-		try {
-			url = HTTPUtil.encodeURL(url);
-			method = new HttpGet(url);
+		url = HTTPUtil.encodeURL(url);
+		HttpGet method = new HttpGet(url);
 
-			RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
-			requestConfigBuilder.setMaxRedirects(10);
-			method.setConfig(requestConfigBuilder.build());
-			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
+		requestConfigBuilder.setMaxRedirects(10);
+		method.setConfig(requestConfigBuilder.build());
+		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
-			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
-				method.setHeader(entry.getKey(), entry.getValue());
-			}
-
-			HttpContext context = new BasicHttpContext();
-			try (CloseableHttpResponse response = client.execute(method, context)) {
-				int statusCode = response.getStatusLine().getStatusCode();
-
-				if (statusCode < 200 || statusCode >= 400) {
-					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
-				}
-
-				String redirectedURL = null;
-
-				HttpClientContext clientContext = HttpClientContext.adapt(context);
-				List<URI> redirectedLocations = clientContext.getRedirectLocations();
-				if (redirectedLocations != null && !redirectedLocations.isEmpty()) {
-					Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
-					Object redirectedHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
-					if (redirectedRequest instanceof HttpUriRequest && redirectedHost instanceof HttpHost) {
-						URI redirectedURI = ((HttpUriRequest)redirectedRequest).getURI();
-						HttpHost redirectedHttpHost = (HttpHost)redirectedHost;
-						if (redirectedURI.isAbsolute()) {
-							redirectedURL = redirectedURI.toString();
-						} else {
-							redirectedURL = redirectedHttpHost.toURI() + redirectedURI;
-						}
-					}
-				}
-
-				String page;
-
-				HttpEntity entity = response.getEntity();
-				if (entity != null) {
-					page = EntityUtils.toString(entity);
-					EntityUtils.consume(response.getEntity());
-				} else {
-					page = "";
-				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
-			}
-		} finally {
-			if (method != null) {
-				method.abort();
-			}
+		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+			method.setHeader(entry.getKey(), entry.getValue());
 		}
+
+		HttpContext context = new BasicHttpContext();
+
+		return client.execute(method, context, response -> {
+			StatusLine statusLine = new StatusLine(response);
+			int statusCode = statusLine.getStatusCode();
+
+			if (statusCode < 200 || statusCode >= 400) {
+				method.abort();
+				return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
+			}
+
+			String redirectedURL = getRedirectedURL(context);
+
+			String page;
+
+			HttpEntity entity = response.getEntity();
+			if (entity != null) {
+				page = EntityUtils.toString(entity);
+			} else {
+				page = "";
+			}
+			return new ContainerPage(true, page, redirectedURL, statusLine, Arrays.asList(response.getHeaders()));
+		});
 	}
 
 	/**
@@ -502,79 +516,58 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @return Container Page
 	 * @throws IOException
 	 */
+	@SuppressWarnings("resource")
 	public ContainerPage executeHTTPPostRequest(String url, boolean multiPart, Map<String, String> fields, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
-		HttpPost method = null;
-		try {
-			url = HTTPUtil.encodeURL(url);
-			method = new HttpPost(url);
+		url = HTTPUtil.encodeURL(url);
+		HttpPost method = new HttpPost(url);
 
-			RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
-			requestConfigBuilder.setMaxRedirects(10);
-			method.setConfig(requestConfigBuilder.build());
-			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
+		requestConfigBuilder.setMaxRedirects(10);
+		method.setConfig(requestConfigBuilder.build());
+		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
-			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
-				method.setHeader(entry.getKey(), entry.getValue());
-			}
-
-			if (multiPart) {
-				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-				for (Map.Entry<String, String> entry : fields.entrySet()) {
-					builder.addTextBody(entry.getKey(), entry.getValue());
-				}
-				HttpEntity multipart = builder.build();
-				method.setEntity(multipart);
-			} else {
-				List<NameValuePair> params = new ArrayList<>();
-				for (Map.Entry<String, String> entry : fields.entrySet()) {
-					params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-				}
-				method.setEntity(new UrlEncodedFormEntity(params));
-			}
-
-			HttpContext context = new BasicHttpContext();
-			try (CloseableHttpResponse response = client.execute(method, context)) {
-				int statusCode = response.getStatusLine().getStatusCode();
-
-				if (statusCode < 200 || statusCode >= 400) {
-					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
-				}
-
-				String redirectedURL = null;
-
-				HttpClientContext clientContext = HttpClientContext.adapt(context);
-				List<URI> redirectedLocations = clientContext.getRedirectLocations();
-				if (redirectedLocations != null && !redirectedLocations.isEmpty()) {
-					Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
-					Object redirectedHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
-					if (redirectedRequest instanceof HttpUriRequest && redirectedHost instanceof HttpHost) {
-						URI redirectedURI = ((HttpUriRequest)redirectedRequest).getURI();
-						HttpHost redirectedHttpHost = (HttpHost)redirectedHost;
-						if (redirectedURI.isAbsolute()) {
-							redirectedURL = redirectedURI.toString();
-						} else {
-							redirectedURL = redirectedHttpHost.toURI() + redirectedURI;
-						}
-					}
-				}
-
-				String page;
-
-				HttpEntity entity = response.getEntity();
-				if (entity != null) {
-					page = EntityUtils.toString(entity);
-					EntityUtils.consume(response.getEntity());
-				} else {
-					page = "";
-				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
-			}
-		} finally {
-			if (method != null) {
-				method.abort();
-			}
+		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+			method.setHeader(entry.getKey(), entry.getValue());
 		}
+
+		if (multiPart) {
+			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+			for (Map.Entry<String, String> entry : fields.entrySet()) {
+				builder.addTextBody(entry.getKey(), entry.getValue());
+			}
+			HttpEntity multipart = builder.build();
+			method.setEntity(multipart);
+		} else {
+			List<NameValuePair> params = new ArrayList<>();
+			for (Map.Entry<String, String> entry : fields.entrySet()) {
+				params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+			}
+			method.setEntity(new UrlEncodedFormEntity(params));
+		}
+
+		HttpContext context = new BasicHttpContext();
+
+		return client.execute(method, context, response -> {
+			StatusLine statusLine = new StatusLine(response);
+			int statusCode = statusLine.getStatusCode();
+
+			if (statusCode < 200 || statusCode >= 400) {
+				method.abort();
+				return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
+			}
+
+			String redirectedURL = getRedirectedURL(context);
+
+			String page;
+
+			HttpEntity entity = response.getEntity();
+			if (entity != null) {
+				page = EntityUtils.toString(entity);
+			} else {
+				page = "";
+			}
+			return new ContainerPage(true, page, redirectedURL, statusLine, Arrays.asList(response.getHeaders()));
+		});
 	}
 
 	/**
@@ -591,31 +584,29 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @return Container Page
 	 * @throws IOException
 	 */
+	@SuppressWarnings("resource")
 	public ContainerPage executeHTTPPostRequest(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, Map<String, String> additionalHeaders,
 			UploadProgressListener listener, CloseableHttpClient client) throws IOException {
-		HttpPost method = null;
-		try {
-			url = HTTPUtil.encodeURL(url);
-			method = new HttpPost(url);
+		url = HTTPUtil.encodeURL(url);
+		HttpPost method = new HttpPost(url);
 
-			RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
-			requestConfigBuilder.setMaxRedirects(10);
-			method.setConfig(requestConfigBuilder.build());
-			method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
+		requestConfigBuilder.setMaxRedirects(10);
+		method.setConfig(requestConfigBuilder.build());
+		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
-			for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
-				method.setHeader(entry.getKey(), entry.getValue());
-			}
+		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
+			method.setHeader(entry.getKey(), entry.getValue());
+		}
 
-			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-			for (Map.Entry<String, String> entry : fields.entrySet()) {
-				builder.addTextBody(entry.getKey(), entry.getValue());
-			}
+		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+		for (Map.Entry<String, String> entry : fields.entrySet()) {
+			builder.addTextBody(entry.getKey(), entry.getValue());
+		}
 
-			builder.addBinaryBody(fileFieldName, file, ContentType.APPLICATION_OCTET_STREAM, fileName);
+		builder.addBinaryBody(fileFieldName, file, ContentType.APPLICATION_OCTET_STREAM, fileName);
 
-			HttpEntity multipart = builder.build();
-
+		try (HttpEntity multipart = builder.build()) {
 			if (listener != null) {
 				UploadProgressEntityWrapper uploadProgressEntityWrapper = new UploadProgressEntityWrapper(multipart, listener);
 				method.setEntity(uploadProgressEntityWrapper);
@@ -624,47 +615,27 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			}
 
 			HttpContext context = new BasicHttpContext();
-			try (CloseableHttpResponse response = client.execute(method, context)) {
-				int statusCode = response.getStatusLine().getStatusCode();
+			return client.execute(method, context, response -> {
+				StatusLine statusLine = new StatusLine(response);
+				int statusCode = statusLine.getStatusCode();
 
 				if (statusCode < 200 || statusCode >= 400) {
 					method.abort();
-					return new ContainerPage(false, "", null, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
+					return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
 				}
 
-				String redirectedURL = null;
-
-				HttpClientContext clientContext = HttpClientContext.adapt(context);
-				List<URI> redirectedLocations = clientContext.getRedirectLocations();
-				if (redirectedLocations != null && !redirectedLocations.isEmpty()) {
-					Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
-					Object redirectedHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
-					if (redirectedRequest instanceof HttpUriRequest && redirectedHost instanceof HttpHost) {
-						URI redirectedURI = ((HttpUriRequest)redirectedRequest).getURI();
-						HttpHost redirectedHttpHost = (HttpHost)redirectedHost;
-						if (redirectedURI.isAbsolute()) {
-							redirectedURL = redirectedURI.toString();
-						} else {
-							redirectedURL = redirectedHttpHost.toURI() + redirectedURI;
-						}
-					}
-				}
+				String redirectedURL = getRedirectedURL(context);
 
 				String page;
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
 					page = EntityUtils.toString(entity);
-					EntityUtils.consume(response.getEntity());
 				} else {
 					page = "";
 				}
-				return new ContainerPage(true, page, redirectedURL, response.getStatusLine(), Arrays.asList(response.getAllHeaders()));
-			}
-		} finally {
-			if (method != null) {
-				method.abort();
-			}
+				return new ContainerPage(true, page, redirectedURL, statusLine, Arrays.asList(response.getHeaders()));
+			});
 		}
 	}
 
@@ -702,7 +673,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			conn.setRequestProperty("Connection", "Keep-Alive");
 			conn.addRequestProperty("Content-length", multipart.getContentLength() + "");
-			conn.addRequestProperty(multipart.getContentType().getName(), multipart.getContentType().getValue());
+			conn.addRequestProperty("Content-Type", multipart.getContentType());
 
 			conn.connect();
 

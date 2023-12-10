@@ -2,8 +2,8 @@ package ch.supertomcat.bilderuploader.upload;
 
 import java.util.List;
 
-import org.apache.http.Header;
-import org.apache.http.StatusLine;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.message.StatusLine;
 
 /**
  * Container Page

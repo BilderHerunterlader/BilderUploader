@@ -1,24 +1,22 @@
 package ch.supertomcat.bilderuploader.settings;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.ConnectionConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.Credentials;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.config.Http1Config;
+import org.apache.hc.core5.http.io.SocketConfig;
+import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 
 import ch.supertomcat.bilderuploader.settingsconfig.ConnectionSettings;
 import ch.supertomcat.bilderuploader.settingsconfig.ProxyMode;
@@ -67,7 +65,7 @@ public class ProxyManager {
 	/**
 	 * Mutli Threaded Connection Manager
 	 */
-	private final PoolingHttpClientConnectionManager conManager;
+	private PoolingHttpClientConnectionManager conManager;
 
 	/**
 	 * Constructor
@@ -79,20 +77,62 @@ public class ProxyManager {
 		// Get the configuration
 		readFromSettings();
 
-		RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create();
-		registryBuilder.register("http", PlainConnectionSocketFactory.getSocketFactory());
-		registryBuilder.register("https", SSLConnectionSocketFactory.getSocketFactory());
-		Registry<ConnectionSocketFactory> registry = registryBuilder.build();
-		conManager = new PoolingHttpClientConnectionManager(registry);
-		conManager.setMaxTotal(60);
-		conManager.setDefaultMaxPerRoute(30);
+		initializeConnectionManager();
 
+		settingsManager.addSettingsListener(new BUSettingsListener() {
+
+			@Override
+			public void settingsChanged() {
+				conManager.setDefaultConnectionConfig(createConnectionConfig());
+			}
+
+			@Override
+			public void lookAndFeelChanged() {
+				// Nothing to do
+			}
+		});
+	}
+
+	/**
+	 * Create Connection Config
+	 * 
+	 * @return Connection Config
+	 */
+	private ConnectionConfig createConnectionConfig() {
+		ConnectionSettings conSettings = settingsManager.getConnectionSettings();
+		ConnectionConfig.Builder defaultConnectionConfigBuilder = ConnectionConfig.custom();
+		defaultConnectionConfigBuilder.setSocketTimeout(Timeout.ofMilliseconds(conSettings.getSocketTimeout()));
+		defaultConnectionConfigBuilder.setConnectTimeout(Timeout.ofMilliseconds(conSettings.getConnectTimeout()));
+		return defaultConnectionConfigBuilder.build();
+	}
+
+	/**
+	 * Initialize Connection Manager
+	 */
+	private void initializeConnectionManager() {
 		/*
 		 * Custom Socket and Connection config to fix slow uploads. By default apache httpclient only uses 8192 byte frames for sending, which makes uploads
 		 * slow.
 		 */
-		conManager.setDefaultSocketConfig(SocketConfig.custom().setSndBufSize(65536).build());
-		conManager.setDefaultConnectionConfig(ConnectionConfig.custom().setBufferSize(65536).setFragmentSizeHint(65536).build());
+		Http1Config http1Config = Http1Config.custom().setBufferSize(65536).setChunkSizeHint(65536).build();
+		ManagedHttpClientConnectionFactory connectionFactory = ManagedHttpClientConnectionFactory.builder().http1Config(http1Config).build();
+
+		PoolingHttpClientConnectionManagerBuilder conManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create();
+		conManagerBuilder.setMaxConnTotal(60);
+		conManagerBuilder.setMaxConnPerRoute(30);
+		conManagerBuilder.setDefaultSocketConfig(SocketConfig.custom().setSndBufSize(65536).build());
+		conManagerBuilder.setConnectionFactory(connectionFactory);
+
+		conManagerBuilder.setDefaultConnectionConfig(createConnectionConfig());
+
+		conManager = conManagerBuilder.build();
+	}
+
+	/**
+	 * @return Connection Manager
+	 */
+	private PoolingHttpClientConnectionManager getConnectionManager() {
+		return conManager;
 	}
 
 	/**
@@ -103,10 +143,7 @@ public class ProxyManager {
 	public RequestConfig.Builder getDefaultRequestConfigBuilder() {
 		RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 		ConnectionSettings conSettings = settingsManager.getConnectionSettings();
-		requestConfigBuilder.setSocketTimeout(conSettings.getSocketTimeout());
-		requestConfigBuilder.setConnectionRequestTimeout(conSettings.getConnectionRequestTimeout());
-		requestConfigBuilder.setConnectTimeout(conSettings.getConnectTimeout());
-		requestConfigBuilder.setCookieSpec(CookieSpecs.STANDARD);
+		requestConfigBuilder.setConnectionRequestTimeout(Timeout.ofMilliseconds(conSettings.getConnectionRequestTimeout()));
 		return requestConfigBuilder;
 	}
 
@@ -115,9 +152,9 @@ public class ProxyManager {
 			HttpHost proxy = new HttpHost(proxyname, proxyport);
 			if (auth) {
 				AuthScope authScope = new AuthScope(proxyname, proxyport);
-				Credentials credentials = new UsernamePasswordCredentials(proxyuser, proxypassword);
+				Credentials credentials = new UsernamePasswordCredentials(proxyuser, proxypassword.toCharArray());
 
-				CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+				BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 				credentialsProvider.setCredentials(authScope, credentials);
 
 				clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
@@ -125,15 +162,8 @@ public class ProxyManager {
 			clientBuilder.setProxy(proxy);
 		}
 
-		DefaultHttpRequestRetryHandler retryHandler = new DefaultHttpRequestRetryHandler(0, false);
-		clientBuilder.setRetryHandler(retryHandler);
-
-		/*
-		 * Custom Socket and Connection config to fix slow uploads. By default apache httpclient only uses 8192 byte frames for sending, which makes uploads
-		 * slow.
-		 */
-		clientBuilder.setDefaultSocketConfig(SocketConfig.custom().setSndBufSize(65536).build());
-		clientBuilder.setDefaultConnectionConfig(ConnectionConfig.custom().setBufferSize(65536).setFragmentSizeHint(65536).build());
+		DefaultHttpRequestRetryStrategy retryStrategy = new DefaultHttpRequestRetryStrategy(0, TimeValue.ofSeconds(1L));
+		clientBuilder.setRetryStrategy(retryStrategy);
 
 		clientBuilder.setDefaultRequestConfig(getDefaultRequestConfigBuilder().build());
 	}
@@ -143,10 +173,11 @@ public class ProxyManager {
 	 * 
 	 * @return HttpClientBuilder
 	 */
+	@SuppressWarnings("resource")
 	public HttpClientBuilder getHTTPClientBuilder() {
 		HttpClientBuilder clientBuilder = HttpClientBuilder.create();
 		clientBuilder.setConnectionManagerShared(true);
-		clientBuilder.setConnectionManager(conManager);
+		clientBuilder.setConnectionManager(getConnectionManager());
 		configureHttpClientBuilder(clientBuilder);
 		return clientBuilder;
 	}
