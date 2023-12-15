@@ -77,7 +77,22 @@ public class ProxyManager {
 		// Get the configuration
 		readFromSettings();
 
-		initializeConnectionManager();
+		/*
+		 * Custom Socket and Connection config to fix slow uploads. By default apache httpclient only uses 8192 byte frames for sending, which makes uploads
+		 * slow.
+		 */
+		Http1Config http1Config = Http1Config.custom().setBufferSize(65536).setChunkSizeHint(65536).build();
+		ManagedHttpClientConnectionFactory connectionFactory = ManagedHttpClientConnectionFactory.builder().http1Config(http1Config).build();
+
+		PoolingHttpClientConnectionManagerBuilder conManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create();
+		conManagerBuilder.setMaxConnTotal(60);
+		conManagerBuilder.setMaxConnPerRoute(30);
+		conManagerBuilder.setDefaultSocketConfig(SocketConfig.custom().setSndBufSize(65536).build());
+		conManagerBuilder.setConnectionFactory(connectionFactory);
+
+		conManagerBuilder.setDefaultConnectionConfig(createConnectionConfig());
+
+		conManager = conManagerBuilder.build();
 
 		settingsManager.addSettingsListener(new BUSettingsListener() {
 
@@ -104,35 +119,6 @@ public class ProxyManager {
 		defaultConnectionConfigBuilder.setSocketTimeout(Timeout.ofMilliseconds(conSettings.getSocketTimeout()));
 		defaultConnectionConfigBuilder.setConnectTimeout(Timeout.ofMilliseconds(conSettings.getConnectTimeout()));
 		return defaultConnectionConfigBuilder.build();
-	}
-
-	/**
-	 * Initialize Connection Manager
-	 */
-	private void initializeConnectionManager() {
-		/*
-		 * Custom Socket and Connection config to fix slow uploads. By default apache httpclient only uses 8192 byte frames for sending, which makes uploads
-		 * slow.
-		 */
-		Http1Config http1Config = Http1Config.custom().setBufferSize(65536).setChunkSizeHint(65536).build();
-		ManagedHttpClientConnectionFactory connectionFactory = ManagedHttpClientConnectionFactory.builder().http1Config(http1Config).build();
-
-		PoolingHttpClientConnectionManagerBuilder conManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create();
-		conManagerBuilder.setMaxConnTotal(60);
-		conManagerBuilder.setMaxConnPerRoute(30);
-		conManagerBuilder.setDefaultSocketConfig(SocketConfig.custom().setSndBufSize(65536).build());
-		conManagerBuilder.setConnectionFactory(connectionFactory);
-
-		conManagerBuilder.setDefaultConnectionConfig(createConnectionConfig());
-
-		conManager = conManagerBuilder.build();
-	}
-
-	/**
-	 * @return Connection Manager
-	 */
-	private PoolingHttpClientConnectionManager getConnectionManager() {
-		return conManager;
 	}
 
 	/**
@@ -173,11 +159,10 @@ public class ProxyManager {
 	 * 
 	 * @return HttpClientBuilder
 	 */
-	@SuppressWarnings("resource")
 	public HttpClientBuilder getHTTPClientBuilder() {
 		HttpClientBuilder clientBuilder = HttpClientBuilder.create();
 		clientBuilder.setConnectionManagerShared(true);
-		clientBuilder.setConnectionManager(getConnectionManager());
+		clientBuilder.setConnectionManager(conManager);
 		configureHttpClientBuilder(clientBuilder);
 		return clientBuilder;
 	}
