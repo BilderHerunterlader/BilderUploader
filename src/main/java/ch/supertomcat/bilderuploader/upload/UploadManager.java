@@ -487,7 +487,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			int statusCode = statusLine.getStatusCode();
 
 			if (statusCode < 200 || statusCode >= 400) {
-				method.abort();
 				return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
 			}
 
@@ -552,7 +551,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			int statusCode = statusLine.getStatusCode();
 
 			if (statusCode < 200 || statusCode >= 400) {
-				method.abort();
 				return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
 			}
 
@@ -620,7 +618,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				int statusCode = statusLine.getStatusCode();
 
 				if (statusCode < 200 || statusCode >= 400) {
-					method.abort();
 					return new ContainerPage(false, "", null, statusLine, Arrays.asList(response.getHeaders()));
 				}
 
