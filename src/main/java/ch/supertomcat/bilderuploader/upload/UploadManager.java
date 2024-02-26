@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
@@ -31,8 +30,10 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.protocol.RedirectLocations;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
@@ -437,9 +438,9 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			List<URI> redirectedLocationsURIList = redirectedLocations.getAll();
 			if (!redirectedLocationsURIList.isEmpty()) {
 				Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
-				if (redirectedRequest instanceof HttpUriRequest) {
+				if (redirectedRequest instanceof ClassicHttpRequest) {
 					try {
-						URI redirectedURI = ((HttpUriRequest)redirectedRequest).getUri();
+						URI redirectedURI = ((ClassicHttpRequest)redirectedRequest).getUri();
 						if (redirectedURI.isAbsolute()) {
 							redirectedURL = redirectedURI.toString();
 						} else {
@@ -474,7 +475,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
@@ -523,7 +524,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
@@ -591,7 +592,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
