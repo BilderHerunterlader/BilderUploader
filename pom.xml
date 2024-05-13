@@ -92,11 +92,6 @@
 			<artifactId>syntaxpane</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.github.imcdonagh</groupId>
-			<artifactId>image4j</artifactId>
-			<version>0.7.2</version>
-		</dependency>
-		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
 			<scope>test</scope>
@@ -122,6 +117,7 @@
 						<configuration>
 							<sources>
 								<source>src/generated/java</source>
+								<source>src/external/java</source>
 							</sources>
 						</configuration>
 					</execution>
