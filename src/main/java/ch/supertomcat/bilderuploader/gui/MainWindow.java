@@ -256,7 +256,8 @@ public class MainWindow extends JFrame {
 								queueManager.addFile(uploadFile);
 							}
 						} else if (file.isDirectory()) {
-							try (Stream<Path> stream = recursive ? Files.walk(file.toPath()) : Files.list(file.toPath())) {
+							try (@SuppressWarnings("resource")
+							Stream<Path> stream = recursive ? Files.walk(file.toPath()) : Files.list(file.toPath())) {
 								Stream<Path> filterStream = stream.filter(Files::isRegularFile);
 								if (fileNameFilter != null) {
 									filterStream = filterStream.filter(fileNameFilter);

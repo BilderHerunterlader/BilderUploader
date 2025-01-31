@@ -30,17 +30,16 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.protocol.RedirectLocations;
-import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.http.message.StatusLine;
-import org.apache.hc.core5.http.protocol.BasicHttpContext;
 import org.apache.hc.core5.http.protocol.HttpContext;
-import org.apache.hc.core5.http.protocol.HttpCoreContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -432,26 +431,22 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 */
 	private String getRedirectedURL(HttpContext context) {
 		String redirectedURL = null;
-		HttpClientContext clientContext = HttpClientContext.adapt(context);
+		HttpClientContext clientContext = HttpClientContext.castOrCreate(context);
 		RedirectLocations redirectedLocations = clientContext.getRedirectLocations();
 		if (redirectedLocations != null) {
 			List<URI> redirectedLocationsURIList = redirectedLocations.getAll();
 			if (!redirectedLocationsURIList.isEmpty()) {
-				Object redirectedRequest = context.getAttribute(HttpCoreContext.HTTP_REQUEST);
-				if (redirectedRequest instanceof ClassicHttpRequest) {
-					try {
-						URI redirectedURI = ((ClassicHttpRequest)redirectedRequest).getUri();
-						if (redirectedURI.isAbsolute()) {
-							redirectedURL = redirectedURI.toString();
-						} else {
-							/*
-							 * TODO Implement with httpclient5. Same code as for Version 4 does not work anymore.
-							 */
-							logger.error("Could not determine redirect URI, because it is not absolute: {}", redirectedURI);
-						}
-					} catch (URISyntaxException e) {
-						logger.error("Could not determine redirection", e);
+				HttpRequest redirectedRequest = clientContext.getRequest();
+				try {
+					URI redirectedURI = redirectedRequest.getUri();
+					if (redirectedURI.isAbsolute()) {
+						redirectedURL = redirectedURI.toString();
+					} else {
+						HttpHost redirectedHttpHost = clientContext.getHttpRoute().getTargetHost();
+						redirectedURL = redirectedHttpHost.toURI() + redirectedURI;
 					}
+				} catch (URISyntaxException e) {
+					logger.error("Could not determine redirection", e);
 				}
 			}
 		}
@@ -481,7 +476,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			method.setHeader(entry.getKey(), entry.getValue());
 		}
 
-		HttpContext context = new BasicHttpContext();
+		HttpClientContext context = HttpClientContext.create();
 
 		return client.execute(method, context, response -> {
 			StatusLine statusLine = new StatusLine(response);
@@ -545,7 +540,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			method.setEntity(new UrlEncodedFormEntity(params));
 		}
 
-		HttpContext context = new BasicHttpContext();
+		HttpClientContext context = HttpClientContext.create();
 
 		return client.execute(method, context, response -> {
 			StatusLine statusLine = new StatusLine(response);
@@ -613,7 +608,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				method.setEntity(multipart);
 			}
 
-			HttpContext context = new BasicHttpContext();
+			HttpClientContext context = HttpClientContext.create();
 			return client.execute(method, context, response -> {
 				StatusLine statusLine = new StatusLine(response);
 				int statusCode = statusLine.getStatusCode();

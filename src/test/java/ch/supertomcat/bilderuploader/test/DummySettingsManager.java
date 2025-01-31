@@ -1,8 +1,7 @@
 package ch.supertomcat.bilderuploader.test;
 
-import javax.xml.bind.JAXBException;
-
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
+import jakarta.xml.bind.JAXBException;
 
 /**
  * Class which handels the settings

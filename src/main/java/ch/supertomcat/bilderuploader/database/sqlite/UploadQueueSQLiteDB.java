@@ -12,10 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 
 import ch.supertomcat.bilderuploader.hoster.HosterManager;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
@@ -24,6 +20,10 @@ import ch.supertomcat.bilderuploader.upload.FileUploadResult;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
 import ch.supertomcat.bilderuploader.upload.UploadFileState;
 import ch.supertomcat.supertomcatutils.database.sqlite.SQLiteDB;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 /**
  * Class for Sqlite Database connections for Queue Database

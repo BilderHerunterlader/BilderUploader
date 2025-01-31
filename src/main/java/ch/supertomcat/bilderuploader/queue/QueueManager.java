@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.JAXBException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +15,7 @@ import ch.supertomcat.bilderuploader.upload.UploadFile;
 import ch.supertomcat.bilderuploader.upload.UploadFileListener;
 import ch.supertomcat.bilderuploader.upload.UploadFileState;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
+import jakarta.xml.bind.JAXBException;
 
 /**
  * Queue Manager
