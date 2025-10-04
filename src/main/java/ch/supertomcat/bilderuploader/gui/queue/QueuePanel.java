@@ -428,7 +428,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 				}
 			}
 		});
-		t.setName("QueueDeleteThread-" + t.getId());
+		t.setName("QueueDeleteThread-" + t.threadId());
 		t.start();
 	}
 
@@ -470,7 +470,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 				}
 			}
 		});
-		t.setName("QueueResetThread-" + t.getId());
+		t.setName("QueueResetThread-" + t.threadId());
 		t.start();
 	}
 
@@ -518,7 +518,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 				}
 			}
 		});
-		t.setName("QueueResetThread-" + t.getId());
+		t.setName("QueueResetThread-" + t.threadId());
 		t.start();
 	}
 
@@ -597,7 +597,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 				}
 			}
 		});
-		t.setName("QueueCopyThread-" + t.getId());
+		t.setName("QueueCopyThread-" + t.threadId());
 		t.start();
 	}
 

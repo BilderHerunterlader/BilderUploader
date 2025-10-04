@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.supertomcat.bilderuploader.hoster.HosterManager;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
+import ch.supertomcat.supertomcatutils.http.HTTPUtil;
 
 /**
  * Hoster Test
@@ -91,7 +92,7 @@ public class DownloadHostIconsManualTest {
 
 	@SuppressWarnings("resource")
 	private boolean downloadHosterIcon(String hosterIconURL, File outputFile) throws IOException {
-		URL url = new URL(hosterIconURL);
+		URL url = HTTPUtil.parseURL(hosterIconURL);
 		HttpURLConnection con = null;
 		try {
 			con = (HttpURLConnection)url.openConnection();
@@ -115,7 +116,7 @@ public class DownloadHostIconsManualTest {
 
 	@SuppressWarnings("resource")
 	private String downloadHosterPage(String hosterURL) throws IOException {
-		URL url = new URL(hosterURL);
+		URL url = HTTPUtil.parseURL(hosterURL);
 		HttpURLConnection con = null;
 		try {
 			con = (HttpURLConnection)url.openConnection();

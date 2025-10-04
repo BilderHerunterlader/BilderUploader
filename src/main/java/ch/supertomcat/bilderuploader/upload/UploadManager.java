@@ -655,7 +655,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			HttpEntity multipart = builder.build();
 
-			URL xurl = new URL(url);
+			URL xurl = HTTPUtil.parseURL(url);
 			HttpURLConnection conn = (HttpURLConnection)xurl.openConnection();
 			conn.setReadTimeout(10000);
 			conn.setConnectTimeout(15000);
