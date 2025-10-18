@@ -28,6 +28,7 @@ import ch.supertomcat.bilderuploader.hoster.HosterManager;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
 import ch.supertomcat.bilderuploader.settings.ProxyManager;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.gui.Icons;
 import ch.supertomcat.supertomcatutils.gui.Localization;
@@ -131,7 +132,7 @@ public class MainMenuBar {
 		itemLogFolder.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				File logDir = new File(ApplicationProperties.getProperty("LogsPath"));
+				File logDir = new File(ApplicationProperties.getProperty(ApplicationMain.LOGS_PATH));
 				try {
 					Desktop.getDesktop().open(logDir);
 				} catch (IOException e1) {

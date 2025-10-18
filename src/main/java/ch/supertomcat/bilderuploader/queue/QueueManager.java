@@ -14,6 +14,7 @@ import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
 import ch.supertomcat.bilderuploader.upload.UploadFileListener;
 import ch.supertomcat.bilderuploader.upload.UploadFileState;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import jakarta.xml.bind.JAXBException;
 
@@ -56,7 +57,7 @@ public class QueueManager implements UploadFileListener {
 	 */
 	public QueueManager(SettingsManager settingsManager, HosterManager hosterManager) throws JAXBException {
 		this.settingsManager = settingsManager;
-		queueSQLiteDB = new UploadQueueSQLiteDB(ApplicationProperties.getProperty("DatabasePath") + "/BU-Uploads.sqlite", settingsManager, hosterManager);
+		queueSQLiteDB = new UploadQueueSQLiteDB(ApplicationProperties.getProperty(ApplicationMain.DATABASE_PATH) + "/BU-Uploads.sqlite", settingsManager, hosterManager);
 
 		List<UploadFile> filesFromDB = queueSQLiteDB.getAllEntries();
 		for (UploadFile fileFromDB : filesFromDB) {

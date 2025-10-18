@@ -15,6 +15,7 @@ import javax.swing.table.TableCellRenderer;
 import ch.supertomcat.bilderuploader.gui.Favicons;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.gui.Icons;
 import ch.supertomcat.supertomcatutils.gui.table.renderer.DefaultStringColorRowRenderer;
@@ -72,7 +73,7 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 
 			String displayIcon = hoster.getDisplayIcon();
 			if (displayIcon != null && !displayIcon.isEmpty()) {
-				label.setIcon(Favicons.getFaviconIcon(new File(ApplicationProperties.getProperty("ApplicationPath"), "hostIcons/" + displayIcon), 16));
+				label.setIcon(Favicons.getFaviconIcon(new File(ApplicationProperties.getProperty(ApplicationMain.APPLICATION_PATH), "hostIcons/" + displayIcon), 16));
 			} else {
 				label.setIcon(null);
 			}

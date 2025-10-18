@@ -55,6 +55,7 @@ import ch.supertomcat.bilderuploader.settingsconfig.WindowSettings;
 import ch.supertomcat.bilderuploader.templates.TemplateManager;
 import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParserManager;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.gui.Icons;
 import ch.supertomcat.supertomcatutils.gui.Localization;
@@ -98,8 +99,8 @@ public class MainWindow extends JFrame {
 
 	private JLabel lblProgress = new JLabel("");
 
-	private String windowTitlePrefix = ApplicationProperties.getProperty("ApplicationShortName") + " - ";
-	private String windowTitleSuffix = " (" + ApplicationProperties.getProperty("ApplicationVersion") + ")";
+	private String windowTitlePrefix = ApplicationProperties.getProperty(ApplicationMain.APPLICATION_SHORT_NAME) + " - ";
+	private String windowTitleSuffix = " (" + ApplicationProperties.getProperty(ApplicationMain.APPLICATION_VERSION) + ")";
 
 	/**
 	 * Listeners

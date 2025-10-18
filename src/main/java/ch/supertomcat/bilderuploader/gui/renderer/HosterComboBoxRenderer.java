@@ -8,6 +8,7 @@ import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
 import ch.supertomcat.bilderuploader.gui.Favicons;
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 
 /**
@@ -25,7 +26,7 @@ public class HosterComboBoxRenderer extends BasicComboBoxRenderer {
 
 			String displayIcon = hoster.getDisplayIcon();
 			if (displayIcon != null && !displayIcon.isEmpty()) {
-				setIcon(Favicons.getFaviconIcon(new File(ApplicationProperties.getProperty("ApplicationPath"), "hostIcons/" + displayIcon), 16));
+				setIcon(Favicons.getFaviconIcon(new File(ApplicationProperties.getProperty(ApplicationMain.APPLICATION_PATH), "hostIcons/" + displayIcon), 16));
 			} else {
 				setIcon(null);
 			}

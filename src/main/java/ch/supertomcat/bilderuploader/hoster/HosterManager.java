@@ -20,6 +20,7 @@ import org.xml.sax.SAXException;
 
 import ch.supertomcat.bilderuploader.hosterconfig.Hoster;
 import ch.supertomcat.bilderuploader.hosterconfig.ObjectFactory;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -53,7 +54,7 @@ public class HosterManager {
 	 * Constructor
 	 */
 	public HosterManager() {
-		this(new File(ApplicationProperties.getProperty("ApplicationPath"), "hosts/"));
+		this(new File(ApplicationProperties.getProperty(ApplicationMain.APPLICATION_PATH), "hosts/"));
 	}
 
 	/**
@@ -72,7 +73,7 @@ public class HosterManager {
 	private void loadHosts() {
 		for (File xmlFile : getHosterFiles()) {
 			try (FileInputStream in = new FileInputStream(xmlFile);
-					FileInputStream schemaIn = new FileInputStream(new File(ApplicationProperties.getProperty("ApplicationPath"), "hosts/hoster.xsd"))) {
+					FileInputStream schemaIn = new FileInputStream(new File(ApplicationProperties.getProperty(ApplicationMain.APPLICATION_PATH), "hosts/hoster.xsd"))) {
 				JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
 				Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
 				SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);

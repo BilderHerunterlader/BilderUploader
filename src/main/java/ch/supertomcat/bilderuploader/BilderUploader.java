@@ -60,7 +60,7 @@ public class BilderUploader {
 	 * @throws JAXBException
 	 */
 	public BilderUploader() throws JAXBException {
-		SettingsManager settingsManager = new SettingsManager(ApplicationProperties.getProperty("SettingsPath"), "settings.xml");
+		SettingsManager settingsManager = new SettingsManager(ApplicationProperties.getProperty(ApplicationMain.SETTINGS_PATH), "settings.xml");
 
 		// Read the settings from settings file
 		settingsManager.readSettings();

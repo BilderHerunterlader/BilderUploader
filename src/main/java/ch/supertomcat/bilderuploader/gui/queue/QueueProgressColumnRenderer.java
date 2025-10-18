@@ -3,7 +3,6 @@ package ch.supertomcat.bilderuploader.gui.queue;
 import java.awt.Color;
 import java.awt.Component;
 
-import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.table.TableCellRenderer;
 
@@ -12,6 +11,7 @@ import ch.supertomcat.bilderuploader.upload.UploadFile;
 import ch.supertomcat.bilderuploader.upload.UploadFileProgress;
 import ch.supertomcat.bilderuploader.upload.UploadFileState;
 import ch.supertomcat.supertomcatutils.gui.formatter.UnitFormatUtil;
+import ch.supertomcat.supertomcatutils.gui.table.renderer.DefaultProgressBarColorRowRenderer;
 
 /**
  * QueueProgressColumnRenderer
@@ -45,9 +45,9 @@ public class QueueProgressColumnRenderer extends QueueColorRowRenderer implement
 	private static final Color FAILED_COLOR = Color.decode("#ff9e9e");
 
 	/**
-	 * Progress Bar
+	 * Progress Bar (Use DefaultProgressBarColorRowRenderer instead of JProgressBar directly for performance)
 	 */
-	private JProgressBar progressBar = new JProgressBar();
+	private DefaultProgressBarColorRowRenderer progressBar = new DefaultProgressBarColorRowRenderer();
 
 	/**
 	 * Settings Manager

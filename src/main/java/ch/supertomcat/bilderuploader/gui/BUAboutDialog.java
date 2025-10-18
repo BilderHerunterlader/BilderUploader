@@ -1,10 +1,12 @@
 package ch.supertomcat.bilderuploader.gui;
 
 import java.awt.Window;
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.swing.JButton;
 
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.gui.Icons;
 import ch.supertomcat.supertomcatutils.gui.Localization;
@@ -45,9 +47,9 @@ public class BUAboutDialog extends AboutDialog {
 	@Override
 	protected void fillApplicationPathsInformation() {
 		super.fillApplicationPathsInformation();
-		File profilePath = new File(ApplicationProperties.getProperty("ProfilePath"));
-		pnlProgram.addProgramFolderInformation("Database Path:", ApplicationProperties.getProperty("DatabasePath"), profilePath);
-		pnlProgram.addProgramFolderInformation("Settings Path:", ApplicationProperties.getProperty("SettingsPath"), profilePath);
+		Path profilePath = Paths.get(ApplicationProperties.getProperty(ApplicationMain.PROFILE_PATH));
+		pnlProgram.addProgramFolderInformation("Database Path:", ApplicationProperties.getProperty(ApplicationMain.DATABASE_PATH), profilePath);
+		pnlProgram.addProgramFolderInformation("Settings Path:", ApplicationProperties.getProperty(ApplicationMain.SETTINGS_PATH), profilePath);
 		pnlProgram.addProgramFolderInformation("UploadLog Path:", ApplicationProperties.getProperty("UploadLogPath"), profilePath);
 	}
 }

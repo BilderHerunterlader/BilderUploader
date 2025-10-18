@@ -21,6 +21,7 @@ import org.xml.sax.SAXException;
 
 import ch.supertomcat.bilderuploader.filenameparser.FilenameParser;
 import ch.supertomcat.bilderuploader.filenameparser.ObjectFactory;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -49,7 +50,7 @@ public class TitleFilenameParserManager {
 	 * Constructor
 	 */
 	public TitleFilenameParserManager() {
-		this(new File(ApplicationProperties.getProperty("SettingsPath"), "filenameParsers"));
+		this(new File(ApplicationProperties.getProperty(ApplicationMain.SETTINGS_PATH), "filenameParsers"));
 	}
 
 	/**

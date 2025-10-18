@@ -56,6 +56,7 @@ import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParse
 import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParserManager;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
 import ch.supertomcat.bilderuploader.util.BUUtil;
+import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.clipboard.ClipboardUtil;
 import ch.supertomcat.supertomcatutils.gui.Localization;
@@ -436,9 +437,9 @@ public class OutputGeneratorDialog extends JDialog {
 			vars.put("titleFilenameParser", titleFilenameParserContainer);
 			vars.put("escapeTool", new EscapeTool());
 			vars.put("dateTool", new DateTool());
-			vars.put("applicationName", ApplicationProperties.getProperty("ApplicationName"));
-			vars.put("applicationShortName", ApplicationProperties.getProperty("ApplicationShortName"));
-			vars.put("applicationVersion", ApplicationProperties.getProperty("ApplicationVersion"));
+			vars.put("applicationName", ApplicationProperties.getProperty(ApplicationMain.APPLICATION_NAME));
+			vars.put("applicationShortName", ApplicationProperties.getProperty(ApplicationMain.APPLICATION_SHORT_NAME));
+			vars.put("applicationVersion", ApplicationProperties.getProperty(ApplicationMain.APPLICATION_VERSION));
 
 			if (selectedFooterTemplate != null) {
 				vars.put("footerTemplate", "footers/" + selectedFooterTemplate.getName());
@@ -460,8 +461,6 @@ public class OutputGeneratorDialog extends JDialog {
 			String stackTrace = sw.toString();
 			txtOutput.setText(stackTrace);
 			txtOutput.setCaretPosition(0);
-		} finally {
-			System.gc();
 		}
 	}
 
