@@ -1,15 +1,12 @@
 package ch.supertomcat.bilderuploader.gui;
 
-import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import javax.swing.Box;
@@ -30,6 +27,7 @@ import ch.supertomcat.bilderuploader.settings.ProxyManager;
 import ch.supertomcat.bilderuploader.settings.SettingsManager;
 import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
+import ch.supertomcat.supertomcatutils.gui.FileExplorerUtil;
 import ch.supertomcat.supertomcatutils.gui.Icons;
 import ch.supertomcat.supertomcatutils.gui.Localization;
 
@@ -132,12 +130,8 @@ public class MainMenuBar {
 		itemLogFolder.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				File logDir = new File(ApplicationProperties.getProperty(ApplicationMain.LOGS_PATH));
-				try {
-					Desktop.getDesktop().open(logDir);
-				} catch (IOException e1) {
-					logger.error("Could not open Directory: {}", logDir.getAbsolutePath(), e1);
-				}
+				Path logDir = Paths.get(ApplicationProperties.getProperty(ApplicationMain.LOGS_PATH));
+				FileExplorerUtil.openDirectory(logDir);
 			}
 		});
 
@@ -146,15 +140,7 @@ public class MainMenuBar {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String url = ApplicationProperties.getProperty("TutorialURL");
-				if (Desktop.isDesktopSupported()) {
-					try {
-						Desktop.getDesktop().browse(new URI(url));
-					} catch (IOException | URISyntaxException ex) {
-						logger.error("Could not open URL: {}", url, ex);
-					}
-				} else {
-					logger.error("Could not open URL, because Desktop is not supported: {}", url);
-				}
+				FileExplorerUtil.openURL(url);
 			}
 		});
 
