@@ -16,9 +16,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.supertomcat.bilderuploader.gui.renderer.HosterComboBoxRenderer;
 import ch.supertomcat.bilderuploader.gui.settings.SettingsDialog;
 import ch.supertomcat.bilderuploader.hoster.HosterManager;
@@ -35,11 +32,6 @@ import ch.supertomcat.supertomcatutils.gui.Localization;
  * Main Menu Bar
  */
 public class MainMenuBar {
-	/**
-	 * Logger for this class
-	 */
-	private Logger logger = LoggerFactory.getLogger(getClass());
-
 	/**
 	 * MenuBar
 	 */
