@@ -1,15 +1,9 @@
 package ch.supertomcat.bilderuploader.upload;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -168,7 +162,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			logger.info("Upload Step: URL: {}, FileFieldName: {}, Filename: {}", uploadURL, fileFieldName, preparedFilename);
 
 			ContainerPage uploadContainerPage = executeHTTPPostRequest(uploadURL, fileFieldName, file, preparedFilename, uploadFields, additionalHeaders, listener, client);
-			// ContainerPage uploadContainerPage = executeURLConnectionUpload(uploadURL, fileFieldName, file, file.getName(), uploadFields, listener);
 			if (uploadContainerPage.isSuccess()) {
 				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
 				checkForFailure(uploadStep.getFailureRegex(), uploadContainerPage, listener);
@@ -630,86 +623,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				return new ContainerPage(true, page, redirectedURL, statusLine, Arrays.asList(response.getHeaders()));
 			});
 		}
-	}
-
-	/**
-	 * Execute URL Connection Upload
-	 * 
-	 * @param url URL
-	 * @param fileFieldName Field name for file
-	 * @param file File
-	 * @param fileName File name
-	 * @param fields Fields
-	 * @param listener Listener or null
-	 * @return Container Page
-	 */
-	@SuppressWarnings("resource")
-	public ContainerPage executeURLConnectionUpload(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, UploadProgressListener listener) {
-		try {
-			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-			for (Map.Entry<String, String> entry : fields.entrySet()) {
-				builder.addTextBody(entry.getKey(), entry.getValue());
-			}
-
-			builder.addBinaryBody(fileFieldName, file, ContentType.APPLICATION_OCTET_STREAM, fileName);
-
-			HttpEntity multipart = builder.build();
-
-			URL xurl = HTTPUtil.parseURL(url);
-			HttpURLConnection conn = (HttpURLConnection)xurl.openConnection();
-			conn.setReadTimeout(10000);
-			conn.setConnectTimeout(15000);
-			conn.setRequestMethod("POST");
-			conn.setUseCaches(false);
-			conn.setDoInput(true);
-			conn.setDoOutput(true);
-
-			conn.setRequestProperty("Connection", "Keep-Alive");
-			conn.addRequestProperty("Content-length", multipart.getContentLength() + "");
-			conn.addRequestProperty("Content-Type", multipart.getContentType());
-
-			conn.connect();
-
-			OutputStream out;
-			if (listener != null) {
-				out = new UploadProgressFilterOutputStream(conn.getOutputStream(), listener, multipart.getContentLength());
-			} else {
-				out = conn.getOutputStream();
-			}
-
-			multipart.writeTo(out);
-
-			if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-				String page = readStream(conn.getInputStream());
-				return new ContainerPage(true, page, "", null, new ArrayList<>());
-			}
-		} catch (Exception e) {
-			logger.error("xxx", e);
-		}
-		return new ContainerPage(false, "", "", null, new ArrayList<>());
-	}
-
-	private static String readStream(InputStream in) {
-		BufferedReader reader = null;
-		StringBuilder builder = new StringBuilder();
-		try {
-			reader = new BufferedReader(new InputStreamReader(in));
-			String line = "";
-			while ((line = reader.readLine()) != null) {
-				builder.append(line);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		return builder.toString();
 	}
 
 	private class UploadFileQueueTask extends QueueTaskBase<UploadFile, FileUploadResult> {
