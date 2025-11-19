@@ -114,35 +114,40 @@ public class UploadQueueSQLiteDB extends SQLiteDB<UploadFile> {
 	}
 
 	@Override
-	protected synchronized boolean createDatabaseIfNotExist() {
-		// Create table if not exist
-		StringBuilder sbCreateTable = new StringBuilder();
-		sbCreateTable.append("CREATE TABLE IF NOT EXISTS ");
-		sbCreateTable.append(tableName);
-		sbCreateTable.append(" (");
-		sbCreateTable.append("UploadID INTEGER PRIMARY KEY AUTOINCREMENT, ");
-		sbCreateTable.append("File TEXT NOT NULL, ");
-		sbCreateTable.append("Hoster TEXT NOT NULL, ");
-		sbCreateTable.append("Size BIGINT NOT NULL, ");
-		sbCreateTable.append("Added BIGINT NOT NULL, ");
-		sbCreateTable.append("MimeType TEXT NOT NULL, ");
-		sbCreateTable.append("Status TEXT NOT NULL, ");
-		sbCreateTable.append("ErrorMessage TEXT NOT NULL, ");
-		sbCreateTable.append("FailedCount INTEGER NOT NULL, ");
-		sbCreateTable.append("Deactivated BOOLEAN NOT NULL, ");
-		sbCreateTable.append("ResultXML BLOB");
-		sbCreateTable.append(")");
-		String createTableSQL = sbCreateTable.toString();
+	protected boolean createDatabaseIfNotExist() {
+		try {
+			writeLock.lock();
+			// Create table if not exist
+			StringBuilder sbCreateTable = new StringBuilder();
+			sbCreateTable.append("CREATE TABLE IF NOT EXISTS ");
+			sbCreateTable.append(tableName);
+			sbCreateTable.append(" (");
+			sbCreateTable.append("UploadID INTEGER PRIMARY KEY AUTOINCREMENT, ");
+			sbCreateTable.append("File TEXT NOT NULL, ");
+			sbCreateTable.append("Hoster TEXT NOT NULL, ");
+			sbCreateTable.append("Size BIGINT NOT NULL, ");
+			sbCreateTable.append("Added BIGINT NOT NULL, ");
+			sbCreateTable.append("MimeType TEXT NOT NULL, ");
+			sbCreateTable.append("Status TEXT NOT NULL, ");
+			sbCreateTable.append("ErrorMessage TEXT NOT NULL, ");
+			sbCreateTable.append("FailedCount INTEGER NOT NULL, ");
+			sbCreateTable.append("Deactivated BOOLEAN NOT NULL, ");
+			sbCreateTable.append("ResultXML BLOB");
+			sbCreateTable.append(")");
+			String createTableSQL = sbCreateTable.toString();
 
-		try (Connection con = getDatabaseConnection()) {
-			con.setAutoCommit(true);
-			try (Statement statement = con.createStatement()) {
-				statement.executeUpdate(createTableSQL);
+			try (Connection con = getDatabaseConnection()) {
+				con.setAutoCommit(true);
+				try (Statement statement = con.createStatement()) {
+					statement.executeUpdate(createTableSQL);
+				}
+				return true;
+			} catch (SQLException | ClassNotFoundException e) {
+				logger.error("Could not create database: {}", tableName, e);
+				return false;
 			}
-			return true;
-		} catch (SQLException | ClassNotFoundException e) {
-			logger.error("Could not create database: {}", tableName, e);
-			return false;
+		} finally {
+			writeLock.unlock();
 		}
 	}
 
@@ -162,54 +167,68 @@ public class UploadQueueSQLiteDB extends SQLiteDB<UploadFile> {
 		byte[] fileUploadResultBytes = result.getBytes("ResultXML");
 		FileUploadResult fileUploadResult = null;
 		if (fileUploadResultBytes != null) {
-			fileUploadResult = (FileUploadResult)unmarshaller.unmarshal(new ByteArrayInputStream(fileUploadResultBytes));
+			synchronized (unmarshaller) {
+				fileUploadResult = (FileUploadResult)unmarshaller.unmarshal(new ByteArrayInputStream(fileUploadResultBytes));
+			}
 		}
 
 		return new UploadFile(id, new File(filePath), hoster, size, added, mimeType, status, errMsg, failedCount, deactivated, fileUploadResult);
 	}
 
 	@Override
-	public synchronized List<UploadFile> getAllEntries() {
-		List<UploadFile> files = new ArrayList<>();
+	public List<UploadFile> getAllEntries() {
+		try {
+			readLock.lock();
+			List<UploadFile> files = new ArrayList<>();
 
-		try (Connection con = getDatabaseConnection()) {
-			try (PreparedStatement statement = con.prepareStatement(selectAllEntriesSQL)) {
-				try (ResultSet rs = statement.executeQuery()) {
-					while (rs.next()) {
-						files.add(convertResultSetToObject(rs));
+			try (Connection con = getDatabaseConnection()) {
+				try (PreparedStatement statement = con.prepareStatement(selectAllEntriesSQL)) {
+					try (ResultSet rs = statement.executeQuery()) {
+						while (rs.next()) {
+							files.add(convertResultSetToObject(rs));
+						}
+						return files;
 					}
-					return files;
 				}
+			} catch (SQLException | ClassNotFoundException | JAXBException e) {
+				logger.error("Could not get files from database '{}'", tableName, e);
+				JOptionPane.showMessageDialog(null, "Message: " + e.getMessage(), "Database-Error", JOptionPane.ERROR_MESSAGE);
+				return new ArrayList<>();
 			}
-		} catch (SQLException | ClassNotFoundException | JAXBException e) {
-			logger.error("Could not get files from database '{}'", tableName, e);
-			JOptionPane.showMessageDialog(null, "Message: " + e.getMessage(), "Database-Error", JOptionPane.ERROR_MESSAGE);
-			return new ArrayList<>();
+		} finally {
+			readLock.unlock();
 		}
 	}
 
 	@Override
-	public synchronized UploadFile getEntry(int id) {
-		try (Connection con = getDatabaseConnection()) {
-			try (PreparedStatement statement = con.prepareStatement(selectEntrySQL)) {
-				try (ResultSet rs = statement.executeQuery()) {
-					if (!rs.first()) {
-						logger.error("Could not find UploadFile in database: {}", id);
-						return null;
+	public UploadFile getEntry(int id) {
+		try {
+			readLock.lock();
+			try (Connection con = getDatabaseConnection()) {
+				try (PreparedStatement statement = con.prepareStatement(selectEntrySQL)) {
+					try (ResultSet rs = statement.executeQuery()) {
+						if (!rs.first()) {
+							logger.error("Could not find UploadFile in database: {}", id);
+							return null;
+						}
+						return convertResultSetToObject(rs);
 					}
-					return convertResultSetToObject(rs);
 				}
+			} catch (SQLException | ClassNotFoundException | JAXBException e) {
+				logger.error("Could not get UploadFile from database '{}': {}", tableName, id, e);
+				return null;
 			}
-		} catch (SQLException | ClassNotFoundException | JAXBException e) {
-			logger.error("Could not get UploadFile from database '{}': {}", tableName, id, e);
-			return null;
+		} finally {
+			readLock.unlock();
 		}
 	}
 
 	private byte[] convertFileUploadResultToByteArray(FileUploadResult fileUploadResult) throws JAXBException {
 		if (fileUploadResult != null) {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			marshaller.marshal(fileUploadResult, out);
+			synchronized (marshaller) {
+				marshaller.marshal(fileUploadResult, out);
+			}
 			return out.toByteArray();
 		}
 		return null;
@@ -223,7 +242,7 @@ public class UploadQueueSQLiteDB extends SQLiteDB<UploadFile> {
 	 * @throws SQLException
 	 * @throws JAXBException
 	 */
-	private synchronized void insertEntry(UploadFile entry, PreparedStatement statement) throws SQLException, JAXBException {
+	private void insertEntry(UploadFile entry, PreparedStatement statement) throws SQLException, JAXBException {
 		statement.setString(1, entry.getFile().getAbsolutePath());
 		statement.setString(2, entry.getHoster().getName());
 		statement.setLong(3, entry.getSize());
@@ -254,112 +273,142 @@ public class UploadQueueSQLiteDB extends SQLiteDB<UploadFile> {
 	}
 
 	@Override
-	public synchronized boolean insertEntry(UploadFile entry) {
-		try (Connection con = getDatabaseConnection()) {
-			con.setAutoCommit(true);
-			try (PreparedStatement statement = con.prepareStatement(insertEntrySQL, Statement.RETURN_GENERATED_KEYS)) {
-				insertEntry(entry, statement);
+	public boolean insertEntry(UploadFile entry) {
+		try {
+			writeLock.lock();
+			try (Connection con = getDatabaseConnection()) {
+				con.setAutoCommit(true);
+				try (PreparedStatement statement = con.prepareStatement(insertEntrySQL, Statement.RETURN_GENERATED_KEYS)) {
+					insertEntry(entry, statement);
+				}
+				return true;
+			} catch (SQLException | ClassNotFoundException | JAXBException e) {
+				logger.error("Could not insert UploadFile into database '{}': {}", tableName, entry.getFile().getAbsolutePath(), e);
+				return false;
 			}
-			return true;
-		} catch (SQLException | ClassNotFoundException | JAXBException e) {
-			logger.error("Could not insert UploadFile into database '{}': {}", tableName, entry.getFile().getAbsolutePath(), e);
-			return false;
+		} finally {
+			writeLock.unlock();
 		}
 	}
 
 	@Override
-	public synchronized boolean insertEntries(List<UploadFile> entries) {
-		boolean result = true;
-		try (Connection con = getDatabaseConnection()) {
-			con.setAutoCommit(true);
-			try (PreparedStatement statement = con.prepareStatement(insertEntrySQL, Statement.RETURN_GENERATED_KEYS)) {
-				for (UploadFile entry : entries) {
-					try {
-						insertEntry(entry, statement);
-					} catch (SQLException | JAXBException e) {
-						logger.error("Could not insert UploadFile into database '{}': {}", tableName, entry.getFile().getAbsolutePath(), e);
-						result = false;
+	public boolean insertEntries(List<UploadFile> entries) {
+		try {
+			writeLock.lock();
+			boolean result = true;
+			try (Connection con = getDatabaseConnection()) {
+				con.setAutoCommit(true);
+				try (PreparedStatement statement = con.prepareStatement(insertEntrySQL, Statement.RETURN_GENERATED_KEYS)) {
+					for (UploadFile entry : entries) {
+						try {
+							insertEntry(entry, statement);
+						} catch (SQLException | JAXBException e) {
+							logger.error("Could not insert UploadFile into database '{}': {}", tableName, entry.getFile().getAbsolutePath(), e);
+							result = false;
+						}
 					}
 				}
-			}
-		} catch (SQLException | ClassNotFoundException e) {
-			logger.error("Could not insert UploadFiles into database '{}'", tableName, e);
-			result = false;
-		}
-		return result;
-	}
-
-	@Override
-	public synchronized boolean updateEntry(UploadFile entry) {
-		if (entry.getId() <= 0) {
-			logger.warn("Could not update UploadFile in database, because the UploadFile has no valid ID: {}. Adding it to database instead.", entry.getId());
-			return insertEntry(entry);
-		}
-
-		try (Connection con = getDatabaseConnection()) {
-			con.setAutoCommit(true);
-			try (PreparedStatement statement = con.prepareStatement(updateEntrySQL)) {
-				statement.setString(1, entry.getFile().getAbsolutePath());
-				statement.setString(2, entry.getHoster().getName());
-				statement.setLong(3, entry.getSize());
-				statement.setLong(4, entry.getDateTimeAdded());
-				statement.setString(5, entry.getMimeType());
-				statement.setString(6, entry.getStatus().name());
-				statement.setString(7, entry.getErrMsg());
-				statement.setInt(8, entry.getFailedCount());
-				statement.setBoolean(9, entry.isDeactivated());
-				byte[] fileUploadResultBytes = convertFileUploadResultToByteArray(entry.getFileUploadResult());
-				statement.setBytes(10, fileUploadResultBytes);
-				statement.setInt(11, entry.getId());
-				statement.executeUpdate();
-			}
-			return true;
-		} catch (SQLException | ClassNotFoundException | JAXBException e) {
-			logger.error("Could not update UploadFile in database '{}' with ID {}: {}", tableName, entry.getId(), entry.getFile().getAbsolutePath(), e);
-			return false;
-		}
-	}
-
-	@Override
-	public synchronized boolean updateEntries(List<UploadFile> entries) {
-		boolean result = true;
-		for (UploadFile entry : entries) {
-			if (!updateEntry(entry)) {
+			} catch (SQLException | ClassNotFoundException e) {
+				logger.error("Could not insert UploadFiles into database '{}'", tableName, e);
 				result = false;
 			}
-		}
-		return result;
-	}
-
-	@Override
-	public synchronized boolean deleteEntry(UploadFile entry) {
-		if (entry.getId() <= 0) {
-			logger.error("Could not delete UploadFile in database, because the UploadFile has no valid ID: {}", entry.getId());
-			return false;
-		}
-
-		try (Connection con = getDatabaseConnection()) {
-			con.setAutoCommit(true);
-			try (PreparedStatement statement = con.prepareStatement(deleteEntrySQL)) {
-				statement.setInt(1, entry.getId());
-				statement.executeUpdate();
-			}
-			logger.debug("Deleted entry with ID {}: {}", entry.getId(), entry.getFile().getAbsolutePath());
-			return true;
-		} catch (SQLException | ClassNotFoundException e) {
-			logger.error("Could not delete UploadFile into database '{}' with ID {}: {}", tableName, entry.getId(), entry.getFile().getAbsolutePath(), e);
-			return false;
+			return result;
+		} finally {
+			writeLock.unlock();
 		}
 	}
 
 	@Override
-	public synchronized boolean deleteEntries(List<UploadFile> entries) {
-		boolean result = true;
-		for (UploadFile entry : entries) {
-			if (!deleteEntry(entry)) {
-				result = false;
+	public boolean updateEntry(UploadFile entry) {
+		try {
+			writeLock.lock();
+			if (entry.getId() <= 0) {
+				logger.warn("Could not update UploadFile in database, because the UploadFile has no valid ID: {}. Adding it to database instead.", entry.getId());
+				return insertEntry(entry);
 			}
+
+			try (Connection con = getDatabaseConnection()) {
+				con.setAutoCommit(true);
+				try (PreparedStatement statement = con.prepareStatement(updateEntrySQL)) {
+					statement.setString(1, entry.getFile().getAbsolutePath());
+					statement.setString(2, entry.getHoster().getName());
+					statement.setLong(3, entry.getSize());
+					statement.setLong(4, entry.getDateTimeAdded());
+					statement.setString(5, entry.getMimeType());
+					statement.setString(6, entry.getStatus().name());
+					statement.setString(7, entry.getErrMsg());
+					statement.setInt(8, entry.getFailedCount());
+					statement.setBoolean(9, entry.isDeactivated());
+					byte[] fileUploadResultBytes = convertFileUploadResultToByteArray(entry.getFileUploadResult());
+					statement.setBytes(10, fileUploadResultBytes);
+					statement.setInt(11, entry.getId());
+					statement.executeUpdate();
+				}
+				return true;
+			} catch (SQLException | ClassNotFoundException | JAXBException e) {
+				logger.error("Could not update UploadFile in database '{}' with ID {}: {}", tableName, entry.getId(), entry.getFile().getAbsolutePath(), e);
+				return false;
+			}
+		} finally {
+			writeLock.unlock();
 		}
-		return result;
+	}
+
+	@Override
+	public boolean updateEntries(List<UploadFile> entries) {
+		try {
+			writeLock.lock();
+			boolean result = true;
+			for (UploadFile entry : entries) {
+				if (!updateEntry(entry)) {
+					result = false;
+				}
+			}
+			return result;
+		} finally {
+			writeLock.unlock();
+		}
+	}
+
+	@Override
+	public boolean deleteEntry(UploadFile entry) {
+		try {
+			writeLock.lock();
+			if (entry.getId() <= 0) {
+				logger.error("Could not delete UploadFile in database, because the UploadFile has no valid ID: {}", entry.getId());
+				return false;
+			}
+
+			try (Connection con = getDatabaseConnection()) {
+				con.setAutoCommit(true);
+				try (PreparedStatement statement = con.prepareStatement(deleteEntrySQL)) {
+					statement.setInt(1, entry.getId());
+					statement.executeUpdate();
+				}
+				logger.debug("Deleted entry with ID {}: {}", entry.getId(), entry.getFile().getAbsolutePath());
+				return true;
+			} catch (SQLException | ClassNotFoundException e) {
+				logger.error("Could not delete UploadFile into database '{}' with ID {}: {}", tableName, entry.getId(), entry.getFile().getAbsolutePath(), e);
+				return false;
+			}
+		} finally {
+			writeLock.unlock();
+		}
+	}
+
+	@Override
+	public boolean deleteEntries(List<UploadFile> entries) {
+		try {
+			writeLock.lock();
+			boolean result = true;
+			for (UploadFile entry : entries) {
+				if (!deleteEntry(entry)) {
+					result = false;
+				}
+			}
+			return result;
+		} finally {
+			writeLock.unlock();
+		}
 	}
 }

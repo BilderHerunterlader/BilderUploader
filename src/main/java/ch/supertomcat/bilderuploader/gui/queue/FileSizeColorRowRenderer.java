@@ -29,8 +29,8 @@ public class FileSizeColorRowRenderer extends QueueColorRowRenderer implements T
 
 	@Override
 	public void prepareValueText(JLabel label, JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		if (value instanceof Long) {
-			super.prepareValueText(label, table, UnitFormatUtil.getSizeString((Long)value, settingsManager.getGUISettings().getSizeDisplayMode().ordinal()), isSelected, hasFocus, row, column);
+		if (value instanceof Long size) {
+			super.prepareValueText(label, table, UnitFormatUtil.getSizeString(size, settingsManager.getGUISettings().getSizeDisplayMode().ordinal()), isSelected, hasFocus, row, column);
 		} else {
 			super.prepareValueText(label, table, value, isSelected, hasFocus, row, column);
 		}

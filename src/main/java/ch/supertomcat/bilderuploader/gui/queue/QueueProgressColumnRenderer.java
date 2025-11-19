@@ -70,9 +70,7 @@ public class QueueProgressColumnRenderer extends QueueColorRowRenderer implement
 
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		if (value instanceof UploadFile) {
-			UploadFile file = (UploadFile)value;
-
+		if (value instanceof UploadFile file) {
 			Component comp;
 			if (file.getStatus() == UploadFileState.UPLOADING && file.getProgress() != null) {
 				UploadFileProgress progress = file.getProgress();

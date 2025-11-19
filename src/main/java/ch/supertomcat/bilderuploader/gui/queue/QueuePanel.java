@@ -6,12 +6,11 @@ import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -32,9 +31,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ch.supertomcat.bilderuploader.gui.ApplGUIConstants;
 import ch.supertomcat.bilderuploader.gui.MainWindow;
@@ -60,25 +56,11 @@ import ch.supertomcat.supertomcatutils.gui.table.TableUtil;
 /**
  * QueuePanel-Panel
  */
-public class QueuePanel extends JPanel implements QueueManagerListener, UploadQueueManagerListener, MouseListener, TableColumnModelListener {
+public class QueuePanel extends JPanel implements QueueManagerListener, UploadQueueManagerListener {
 	/**
 	 * UID
 	 */
 	private static final long serialVersionUID = 5907100131845566233L;
-
-	/**
-	 * Logger for this class
-	 */
-	private Logger logger = LoggerFactory.getLogger(getClass());
-
-	/**
-	 * Synchronization Object for changes of the table. This object is used instead of
-	 * the QueuePanel (this) itself to prevent deadlocks, when EventQueue.invokeAndWait is used.
-	 * 
-	 * A deadlock happened when SwingUtilities.updateComponentTreeUI was called, while another Thread called picProgressBarUpdated.
-	 * picProgressBarUpdated locked the QueuePanel(this) and SwingUtilities.updateComponentTreeUI did too. This causes the deadlock.
-	 */
-	private Object syncObject = new Object();
 
 	/**
 	 * TabelModel
@@ -276,8 +258,48 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 		jtQueue.getColumn("File").setPreferredWidth(fileOrHosterTableHeaderWidth);
 		jtQueue.getColumn("Hoster").setPreferredWidth(fileOrHosterTableHeaderWidth);
 		updateColWidthsFromSettingsManager();
-		jtQueue.getColumnModel().addColumnModelListener(this);
-		jtQueue.addMouseListener(this);
+		jtQueue.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
+
+			@Override
+			public void columnAdded(TableColumnModelEvent e) {
+				// Nothing to do
+			}
+
+			@Override
+			public void columnMarginChanged(ChangeEvent e) {
+				updateColWidthsToSettingsManager();
+			}
+
+			@Override
+			public void columnMoved(TableColumnModelEvent e) {
+				// Nothing to do
+			}
+
+			@Override
+			public void columnRemoved(TableColumnModelEvent e) {
+				// Nothing to do
+			}
+
+			@Override
+			public void columnSelectionChanged(ListSelectionEvent e) {
+				// Nothing to do
+			}
+		});
+		jtQueue.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getSource() == jtQueue && e.isPopupTrigger() && jtQueue.getSelectedRowCount() > 0) {
+					showTablePopupMenu(e);
+				}
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (e.getSource() == jtQueue && e.isPopupTrigger() && jtQueue.getSelectedRowCount() > 0) {
+					showTablePopupMenu(e);
+				}
+			}
+		});
 		jtQueue.getTableHeader().setReorderingAllowed(false);
 
 		jtQueue.setGridColor(ApplGUIConstants.TABLE_GRID_COLOR);
@@ -353,7 +375,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * Start
 	 */
 	private void actionStart() {
-		Thread t = new Thread(() -> queueManager.startUpload());
+		Thread t = new Thread(queueManager::startUpload);
 		t.start();
 	}
 
@@ -361,28 +383,26 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * Stop
 	 */
 	private void actionStop() {
-		Thread t = new Thread(() -> queueManager.stopUpload());
+		Thread t = new Thread(queueManager::stopUpload);
 		t.start();
 	}
 
 	private void actionGenerate(boolean onlySelected) {
 		List<UploadFile> files = new ArrayList<>();
-		synchronized (syncObject) {
-			if (onlySelected) {
-				int[] selectedRows = jtQueue.getSelectedRows();
-				int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
-				for (int selectedModelRow : selectedModelRows) {
-					UploadFile file = (UploadFile)model.getValueAt(selectedModelRow, progressColumnModelIndex);
-					if (file.getStatus() == UploadFileState.COMPLETE) {
-						files.add(file);
-					}
+		if (onlySelected) {
+			int[] selectedRows = jtQueue.getSelectedRows();
+			int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
+			for (int selectedModelRow : selectedModelRows) {
+				UploadFile file = (UploadFile)model.getValueAt(selectedModelRow, progressColumnModelIndex);
+				if (file.getStatus() == UploadFileState.COMPLETE) {
+					files.add(file);
 				}
-			} else {
-				for (int i = 0; i < model.getRowCount(); i++) {
-					UploadFile file = (UploadFile)model.getValueAt(i, progressColumnModelIndex);
-					if (file.getStatus() == UploadFileState.COMPLETE) {
-						files.add(file);
-					}
+			}
+		} else {
+			for (int i = 0; i < model.getRowCount(); i++) {
+				UploadFile file = (UploadFile)model.getValueAt(i, progressColumnModelIndex);
+				if (file.getStatus() == UploadFileState.COMPLETE) {
+					files.add(file);
 				}
 			}
 		}
@@ -394,12 +414,19 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 */
 	private void actionDelete() {
 		int retval = JOptionPane.showConfirmDialog(owner, Localization.getString("QueueReallyDelete"), "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, Icons
-				.getTangoIcon("status/dialog-warning.png", 32));
+				.getTangoSVGIcon("status/dialog-warning.svg", 32));
 		if (retval == JOptionPane.NO_OPTION) {
 			return;
 		}
 
 		disableComponents();
+
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
 
 		Thread t = new Thread(new Runnable() {
 			@Override
@@ -410,11 +437,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 					pg.progressModeChanged(true);
 					pg.progressChanged(Localization.getString("DeleteEntries"));
 					synchronized (queueManager.getSyncObject()) {
-						synchronized (syncObject) {
-							int[] selectedRows = jtQueue.getSelectedRows();
-							int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
-							queueManager.removeFiles(selectedModelRows);
-						}
+						queueManager.removeFiles(files);
 					}
 					owner.setMessage(Localization.getString("EntriesDeleted"));
 				} finally {
@@ -430,6 +453,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 		});
 		t.setName("QueueDeleteThread-" + t.threadId());
 		t.start();
+
 	}
 
 	/**
@@ -437,6 +461,13 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 */
 	private void actionReset() {
 		disableComponents();
+
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, false);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
 
 		Thread t = new Thread(new Runnable() {
 			@Override
@@ -447,16 +478,11 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 					pg.progressModeChanged(true);
 					pg.progressChanged(Localization.getString("ResettingEntries"));
 					synchronized (queueManager.getSyncObject()) {
-						synchronized (syncObject) {
-							int[] selectedRows = jtQueue.getSelectedRows();
-							int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
-							for (int selectedRow : selectedModelRows) {
-								UploadFile file = (UploadFile)model.getValueAt(selectedRow, progressColumnModelIndex);
-								file.setFileUploadResult(null);
-								file.setStatus(UploadFileState.SLEEPING);
-								queueManager.updateFile(file);
-							}
-						}
+						files.stream().forEach(file -> {
+							file.setFileUploadResult(null);
+							file.setStatus(UploadFileState.SLEEPING);
+						});
+						queueManager.updateFiles(files);
 					}
 					owner.setMessage(Localization.getString("EntriesResetted"));
 				} finally {
@@ -487,6 +513,13 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 
 		disableComponents();
 
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, false);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
+
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -496,15 +529,8 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 					pg.progressModeChanged(true);
 					pg.progressChanged(Localization.getString("ChangingHosterEntries"));
 					synchronized (queueManager.getSyncObject()) {
-						synchronized (syncObject) {
-							int[] selectedRows = jtQueue.getSelectedRows();
-							int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
-							for (int selectedRow : selectedModelRows) {
-								UploadFile file = (UploadFile)model.getValueAt(selectedRow, progressColumnModelIndex);
-								file.setHoster(hoster);
-								queueManager.updateFile(file);
-							}
-						}
+						files.stream().forEach(file -> file.setHoster(hoster));
+						queueManager.updateFiles(files);
 					}
 					owner.setMessage(Localization.getString("EntriesHosterChanged"));
 				} finally {
@@ -526,16 +552,16 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * Activate
 	 */
 	private void actionActivate() {
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, false);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
+
 		synchronized (queueManager.getSyncObject()) {
-			synchronized (syncObject) {
-				int s[] = jtQueue.getSelectedRows();
-				for (int i = 0; i < s.length; i++) {
-					UploadFile file = queueManager.getFileByIndex(jtQueue.convertRowIndexToModel(s[i]));
-					file.setDeactivated(false);
-					queueManager.updateFile(file);
-				}
-				model.fireTableDataChanged();
-			}
+			files.stream().forEach(file -> file.setDeactivated(false));
+			queueManager.updateFiles(files);
 		}
 	}
 
@@ -543,16 +569,16 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * Deactivate
 	 */
 	private void actionDeactivate() {
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, false);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
+
 		synchronized (queueManager.getSyncObject()) {
-			synchronized (syncObject) {
-				int s[] = jtQueue.getSelectedRows();
-				for (int i = 0; i < s.length; i++) {
-					UploadFile file = queueManager.getFileByIndex(jtQueue.convertRowIndexToModel(s[i]));
-					file.setDeactivated(true);
-					queueManager.updateFile(file);
-				}
-				model.fireTableDataChanged();
-			}
+			files.stream().forEach(file -> file.setDeactivated(true));
+			queueManager.updateFiles(files);
 		}
 	}
 
@@ -562,6 +588,13 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	private void actionCopy() {
 		disableComponents();
 
+		List<UploadFile> files = new ArrayList<>();
+		int[] selectedRows = jtQueue.getSelectedRows();
+		int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, false);
+		for (int i = 0; i < selectedModelRows.length; i++) {
+			files.add((UploadFile)model.getValueAt(selectedModelRows[i], progressColumnModelIndex));
+		}
+
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -570,21 +603,11 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 					owner.addProgressObserver(pg);
 					pg.progressModeChanged(true);
 					pg.progressChanged(Localization.getString("CopyEntries"));
-					StringJoiner sj = new StringJoiner("\n");
-					synchronized (queueManager.getSyncObject()) {
-						synchronized (syncObject) {
-							int[] selectedRows = jtQueue.getSelectedRows();
-							int[] selectedModelRows = TableUtil.convertRowIndexToModel(jtQueue, selectedRows, true);
-							for (int selectedRow : selectedModelRows) {
-								UploadFile file = (UploadFile)model.getValueAt(selectedRow, progressColumnModelIndex);
-								for (String uploadResultText : file.getFileUploadResult().getUploadResultTexts()) {
-									// TODO filter out only link, defined by regex in settings
-									sj.add(uploadResultText);
-								}
-							}
-						}
-					}
-					ClipboardUtil.setClipboardContent(sj.toString());
+
+					// TODO filter out only link, defined by regex in settings
+					String content = files.stream().map(UploadFile::getFileUploadResult).flatMap(x -> x.getUploadResultTexts().stream()).collect(Collectors.joining("\n"));
+
+					ClipboardUtil.setClipboardContent(content);
 					owner.setMessage(Localization.getString("EntriesCopied"));
 				} finally {
 					owner.removeProgressObserver(pg);
@@ -636,32 +659,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 
 	@Override
 	public void uploadsComplete(int queue, int openSlots, int maxSlots) {
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) {
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e) {
-		if (e.getSource() == jtQueue && e.isPopupTrigger() && jtQueue.getSelectedRowCount() > 0) {
-			showTablePopupMenu(e);
-		}
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		if (e.getSource() == jtQueue && e.isPopupTrigger() && jtQueue.getSelectedRowCount() > 0) {
-			showTablePopupMenu(e);
-		}
+		// Nothing to do
 	}
 
 	/**
@@ -720,7 +718,7 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * updateColWidthsToSettingsManager
 	 */
 	private void updateColWidthsToSettingsManager() {
-		if (settingsManager.getGUISettings().isSaveTableColumnSizes() == false) {
+		if (!settingsManager.getGUISettings().isSaveTableColumnSizes()) {
 			return;
 		}
 		settingsManager.getGUISettings().setColWidthsQueue(TableUtil.serializeColWidthSetting(jtQueue));
@@ -731,254 +729,157 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	 * updateColWidthsFromSettingsManager
 	 */
 	private void updateColWidthsFromSettingsManager() {
-		if (settingsManager.getGUISettings().isSaveTableColumnSizes() == false) {
+		if (!settingsManager.getGUISettings().isSaveTableColumnSizes()) {
 			return;
 		}
 		TableUtil.applyColWidths(jtQueue, settingsManager.getGUISettings().getColWidthsQueue());
 	}
 
 	@Override
-	public void columnAdded(TableColumnModelEvent e) {
-	}
-
-	@Override
-	public void columnMarginChanged(ChangeEvent e) {
-		updateColWidthsToSettingsManager();
-	}
-
-	@Override
-	public void columnMoved(TableColumnModelEvent e) {
-	}
-
-	@Override
-	public void columnRemoved(TableColumnModelEvent e) {
-	}
-
-	@Override
-	public void columnSelectionChanged(ListSelectionEvent e) {
-	}
-
-	@Override
 	public void fileAdded(UploadFile file) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					model.addRow(file);
-					updateStatus();
-				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				model.addRow(file);
+				updateStatus();
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void filesAdded(List<UploadFile> files) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					for (UploadFile file : files) {
-						model.addRow(file);
-					}
-					updateStatus();
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				for (UploadFile file : files) {
+					model.addRow(file);
 				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
+				updateStatus();
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void fileRemoved(UploadFile file, int index) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					model.removeRow(index);
-					model.fireTableDataChanged();
-					updateStatus();
-				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				model.removeRow(index);
+				model.fireTableDataChanged();
+				updateStatus();
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void filesRemoved(int[] removedIndeces) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					// Convert first removed row index, before removing any rows
-					int firstRemovedRowViewIndex = jtQueue.convertRowIndexToView(removedIndeces[0]);
-
-					for (int i = removedIndeces.length - 1; i > -1; i--) {
-						model.removeRow(removedIndeces[i]);
-					}
-					model.fireTableDataChanged();
-
-					int rowCount = jtQueue.getRowCount();
-					int aboveFirstRemovedRowViewIndex = firstRemovedRowViewIndex - 1;
-					if (firstRemovedRowViewIndex < rowCount) {
-						jtQueue.setRowSelectionInterval(firstRemovedRowViewIndex, firstRemovedRowViewIndex);
-					} else if (aboveFirstRemovedRowViewIndex >= 0 && aboveFirstRemovedRowViewIndex < rowCount) {
-						jtQueue.setRowSelectionInterval(aboveFirstRemovedRowViewIndex, aboveFirstRemovedRowViewIndex);
-					}
-					updateStatus();
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				for (int i = removedIndeces.length - 1; i > -1; i--) {
+					model.removeRow(removedIndeces[i]);
 				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
+				updateStatus();
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void fileProgressChanged(UploadFile file, int index) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					int row = index;
-					if ((row > -1) && (model.getRowCount() > row)) {
-						model.fireTableCellUpdated(row, progressColumnModelIndex);
-					}
-				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				int row = index;
+				if ((row > -1) && (model.getRowCount() > row)) {
+					model.fireTableCellUpdated(row, progressColumnModelIndex);
 				}
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void fileHosterChanged(UploadFile file, int index) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					int row = index;
-					if ((row > -1) && (model.getRowCount() > row)) {
-						// Change Cell
-						Hoster hoster = file.getHoster();
-						model.setValueAt(hoster, row, hosterColumnModelIndex);
-						model.fireTableCellUpdated(row, hosterColumnModelIndex);
-					}
-				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				int row = index;
+				if ((row > -1) && (model.getRowCount() > row)) {
+					// Change Cell
+					Hoster hoster = file.getHoster();
+					model.setValueAt(hoster, row, hosterColumnModelIndex);
+					model.fireTableCellUpdated(row, hosterColumnModelIndex);
 				}
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void fileStatusChanged(UploadFile file, int index) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					int row = index;
-					if ((row > -1) && (model.getRowCount() > row)) {
-						model.fireTableCellUpdated(row, progressColumnModelIndex);
-						if (file.getStatus() == UploadFileState.UPLOADING) {
-							// TODO Settings
-							jtQueue.scrollRectToVisible(new Rectangle(jtQueue.getCellRect(jtQueue.convertRowIndexToView(row), 0, true)));
-						}
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				int row = index;
+				if ((row > -1) && (model.getRowCount() > row)) {
+					model.fireTableCellUpdated(row, progressColumnModelIndex);
+					if (file.getStatus() == UploadFileState.UPLOADING) {
+						// TODO Settings
+						jtQueue.scrollRectToVisible(new Rectangle(jtQueue.getCellRect(jtQueue.convertRowIndexToView(row), 0, true)));
 					}
 				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 
 	@Override
 	public void fileDeactivatedChanged(UploadFile file, int index) {
-		synchronized (syncObject) {
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					int row = index;
-					if ((row > -1) && (model.getRowCount() > row)) {
-						model.fireTableRowsUpdated(row, row);
-					}
-				}
-			};
-			if (EventQueue.isDispatchThread()) {
-				r.run();
-			} else {
-				try {
-					EventQueue.invokeAndWait(r);
-				} catch (InvocationTargetException e) {
-					logger.error(e.getMessage(), e);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				int row = index;
+				if ((row > -1) && (model.getRowCount() > row)) {
+					model.fireTableRowsUpdated(row, row);
 				}
 			}
+		};
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 

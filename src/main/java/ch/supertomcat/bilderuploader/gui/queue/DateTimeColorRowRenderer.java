@@ -40,11 +40,11 @@ public class DateTimeColorRowRenderer extends QueueColorRowRenderer implements T
 
 	@Override
 	public void prepareValueText(JLabel label, JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		if (value instanceof TemporalAccessor) {
-			String formattedDate = dateFormat.format((TemporalAccessor)value);
+		if (value instanceof TemporalAccessor temporalAccessor) {
+			String formattedDate = dateFormat.format(temporalAccessor);
 			super.prepareValueText(label, table, formattedDate, isSelected, hasFocus, row, column);
-		} else if (value instanceof Long) {
-			String formattedDate = dateFormat.format(Instant.ofEpochMilli((Long)value));
+		} else if (value instanceof Long millis) {
+			String formattedDate = dateFormat.format(Instant.ofEpochMilli(millis));
 			super.prepareValueText(label, table, formattedDate, isSelected, hasFocus, row, column);
 		} else {
 			super.prepareValueText(label, table, value, isSelected, hasFocus, row, column);

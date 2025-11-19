@@ -1,9 +1,9 @@
 package ch.supertomcat.bilderuploader.queue;
 
+import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,23 +216,28 @@ public class QueueManager implements UploadFileListener {
 	 * Removes files from the queue based on indices
 	 * If there are uploads running this method will not do anything!
 	 * 
-	 * @param indices Indices
+	 * @param fileList Files
 	 */
-	public void removeFiles(int indices[]) {
+	public void removeFiles(List<UploadFile> fileList) {
 		synchronized (syncObject) {
+			fileList.stream().forEach(UploadFile::removeAllListener);
+			int[] indices = fileList.stream().mapToInt(files::indexOf).filter(index -> index >= 0).sorted().toArray();
+
 			for (int i = indices.length - 1; i > -1; i--) {
-				if ((indices[i] < 0) || (indices[i] >= files.size())) {
-					continue;
-				}
-				UploadFile file = files.get(indices[i]);
-				file.removeAllListener();
-				queueSQLiteDB.deleteEntry(file);
 				files.remove(indices[i]);
 			}
 
-			for (QueueManagerListener l : listeners) {
-				l.filesRemoved(indices);
+			queueSQLiteDB.deleteEntries(fileList);
+
+			if (indices.length == 0) {
+				return;
 			}
+
+			executeInEventQueueThread(() -> {
+				for (QueueManagerListener l : listeners) {
+					l.filesRemoved(indices);
+				}
+			});
 		}
 	}
 
@@ -243,8 +248,7 @@ public class QueueManager implements UploadFileListener {
 		List<UploadFile> list;
 		uploadsStopped = false;
 		synchronized (syncObject) {
-			list = new ArrayList<>(files.stream().filter(x -> !x.isDeactivated() && (x.getStatus() == UploadFileState.SLEEPING || x.getStatus() == UploadFileState.FAILED))
-					.collect(Collectors.toList()));
+			list = files.stream().filter(x -> !x.isDeactivated() && (x.getStatus() == UploadFileState.SLEEPING || x.getStatus() == UploadFileState.FAILED)).toList();
 		}
 		for (QueueManagerListener l : listeners) {
 			l.startUpload(list);
@@ -356,6 +360,19 @@ public class QueueManager implements UploadFileListener {
 	public void resultChanged(UploadFile file) {
 		synchronized (syncObject) {
 			updateFile(file);
+		}
+	}
+
+	/**
+	 * Executes the given Runnable in EventQueue Thread
+	 * 
+	 * @param r Runnable
+	 */
+	private void executeInEventQueueThread(Runnable r) {
+		if (EventQueue.isDispatchThread()) {
+			r.run();
+		} else {
+			EventQueue.invokeLater(r);
 		}
 	}
 }

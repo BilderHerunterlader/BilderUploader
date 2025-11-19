@@ -81,9 +81,7 @@ public final class Favicons {
 					break;
 				}
 
-				if (bestFit == null) {
-					bestFit = image;
-				} else if (image.getHeight() > size && image.getHeight() < bestFit.getHeight()) {
+				if (bestFit == null || (image.getHeight() > size && image.getHeight() < bestFit.getHeight())) {
 					bestFit = image;
 				}
 			}

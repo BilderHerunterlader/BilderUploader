@@ -1,5 +1,6 @@
 package ch.supertomcat.bilderuploader;
 
+import java.awt.EventQueue;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,6 +11,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.jna.Platform;
 
 import ch.supertomcat.bilderuploader.gui.MainWindow;
 import ch.supertomcat.bilderuploader.gui.MainWindowListener;
@@ -66,7 +69,7 @@ public class BilderUploader {
 		settingsManager.readSettings();
 		if (settingsManager.isLanguageFirstRun()) {
 			// If the application is started at first time, the user must select the language
-			String options[] = { "English", "Deutsch" };
+			String[] options = { "English", "Deutsch" };
 			// Display a frame, so that BH already shows up in the taskbar and can be switched to. Otherwise the user might not see that there was a dialog open
 			JFrame frame = null;
 			try {
@@ -120,7 +123,7 @@ public class BilderUploader {
 		QueueManager queueManager = new QueueManager(settingsManager, hosterManager);
 		uploadQueueManager = new UploadQueueManager(queueManager, settingsManager, proxyManager);
 
-		boolean systemTray = SystemTrayTool.isTraySupported();
+		boolean systemTray = SystemTrayTool.isTraySupported() && (Platform.isWindows() || Platform.isMac());
 
 		mainWindow = new MainWindow(hosterManager, templateManager, titleFilenameParserManager, settingsManager, proxyManager, queueManager, uploadQueueManager, systemTray);
 		mainWindow.addListener(new MainWindowListener() {
@@ -131,15 +134,22 @@ public class BilderUploader {
 		});
 
 		if (systemTray) {
-			stt = new SystemTrayTool(mainWindow, settingsManager);
-			stt.init();
-			mainWindow.setVisible(true);
-			stt.showTrayIcon();
+			EventQueue.invokeLater(() -> {
+				mainWindow.setVisible(true);
+
+				stt = new SystemTrayTool(mainWindow, settingsManager);
+				stt.init();
+
+				stt.showTrayIcon();
+			});
 		} else {
 			// If SystemTray is not used bring the main window to the front and request the focus
-			mainWindow.setVisible(true);
-			mainWindow.toFront();
-			mainWindow.requestFocus();
+			EventQueue.invokeLater(() -> {
+				mainWindow.setVisible(true);
+				mainWindow.toFront();
+				mainWindow.requestFocus();
+			});
+
 		}
 	}
 

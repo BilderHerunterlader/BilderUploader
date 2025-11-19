@@ -26,7 +26,7 @@ import ch.supertomcat.supertomcatutils.gui.table.renderer.DefaultStringColorRowR
 public class QueueColorRowRenderer extends DefaultStringColorRowRenderer implements TableCellRenderer {
 	private static final long serialVersionUID = 1L;
 
-	private static final Pattern PATTERN_IMAGE = Pattern.compile("(?i)^.+?\\.(?:bmp|gif|jpe|jpg|jpeg|png|tif|tiff)$");
+	private static final Pattern PATTERN_IMAGE = Pattern.compile("(?i)^.+?\\.(?:avif|bmp|gif|jpe|jpg|jpeg|jfif|pjpeg|pjp|apng|png|tif|tiff|webp)$");
 
 	private static final Pattern PATTERN_VIDEO = Pattern
 			.compile("(?i)^.+?\\.(?:3g2|3gp|3gp2|3gpp|amr|asf|divx|evo|flv|hdmov|m2t|m2ts|m2v|m4v|mkv|m1v|mov|mp2v|mp4|mpe|mpeg|mpg|mts|ogm|ogv|pva|pss|qt|rm|ram|rpm|rmm|ts|tp|tpr|vob|wmv|wmp)$");
@@ -42,11 +42,11 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 	 * Constructor
 	 */
 	public QueueColorRowRenderer() {
-		fileTypeIcons.put("IMAGE", Icons.getTangoIcon("mimetypes/image-x-generic.png", 16));
-		fileTypeIcons.put("VIDEO", Icons.getTangoIcon("mimetypes/video-x-generic.png", 16));
-		fileTypeIcons.put("AUDIO", Icons.getTangoIcon("mimetypes/audio-x-generic.png", 16));
-		fileTypeIcons.put("ARCHIVE", Icons.getTangoIcon("mimetypes/package-x-generic.png", 16));
-		fileTypeIcons.put("TEXT", Icons.getTangoIcon("mimetypes/text-x-generic.png", 16));
+		fileTypeIcons.put("IMAGE", Icons.getTangoSVGIcon("mimetypes/image-x-generic.svg", 16));
+		fileTypeIcons.put("VIDEO", Icons.getTangoSVGIcon("mimetypes/video-x-generic.svg", 16));
+		fileTypeIcons.put("AUDIO", Icons.getTangoSVGIcon("mimetypes/audio-x-generic.svg", 16));
+		fileTypeIcons.put("ARCHIVE", Icons.getTangoSVGIcon("mimetypes/package-x-generic.svg", 16));
+		fileTypeIcons.put("TEXT", Icons.getTangoSVGIcon("mimetypes/text-x-generic.svg", 16));
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 			super.prepareForegroundColor(comp, table, value, isSelected, hasFocus, row, column);
 		} else {
 			Object progressValue = table.getModel().getValueAt(table.convertRowIndexToModel(row), table.getColumn("Progress").getModelIndex());
-			if (progressValue instanceof UploadFile && ((UploadFile)progressValue).isDeactivated()) {
+			if (progressValue instanceof UploadFile file && file.isDeactivated()) {
 				comp.setForeground(Color.RED);
 			} else {
 				super.prepareForegroundColor(comp, table, value, isSelected, hasFocus, row, column);
@@ -65,8 +65,7 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 
 	@Override
 	public void prepareValueText(JLabel label, JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		if (value instanceof Hoster) {
-			Hoster hoster = (Hoster)value;
+		if (value instanceof Hoster hoster) {
 			String hosterName = hoster.getDisplayName();
 			label.setText(hosterName);
 			label.setToolTipText(hosterName);
@@ -77,7 +76,7 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 			} else {
 				label.setIcon(null);
 			}
-		} else if (value instanceof File) {
+		} else if (value instanceof File file) {
 			super.prepareValueText(label, table, value, isSelected, hasFocus, row, column);
 
 			String mimeType = ((UploadFile)table.getValueAt(row, table.getColumn("Progress").getModelIndex())).getMimeType();
@@ -91,13 +90,13 @@ public class QueueColorRowRenderer extends DefaultStringColorRowRenderer impleme
 				setIcon(fileTypeIcons.get("ARCHIVE"));
 			} else if (mimeType.startsWith("text/")) {
 				setIcon(fileTypeIcons.get("TEXT"));
-			} else if (PATTERN_IMAGE.matcher(((File)value).getName()).matches()) {
+			} else if (PATTERN_IMAGE.matcher(file.getName()).matches()) {
 				setIcon(fileTypeIcons.get("IMAGE"));
-			} else if (PATTERN_VIDEO.matcher(((File)value).getName()).matches()) {
+			} else if (PATTERN_VIDEO.matcher(file.getName()).matches()) {
 				setIcon(fileTypeIcons.get("VIDEO"));
-			} else if (PATTERN_AUDIO.matcher(((File)value).getName()).matches()) {
+			} else if (PATTERN_AUDIO.matcher(file.getName()).matches()) {
 				setIcon(fileTypeIcons.get("AUDIO"));
-			} else if (PATTERN_ARCHIVE.matcher(((File)value).getName()).matches()) {
+			} else if (PATTERN_ARCHIVE.matcher(file.getName()).matches()) {
 				setIcon(fileTypeIcons.get("ARCHIVE"));
 			}
 		} else {

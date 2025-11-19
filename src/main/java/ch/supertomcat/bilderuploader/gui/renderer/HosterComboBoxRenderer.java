@@ -20,8 +20,7 @@ public class HosterComboBoxRenderer extends BasicComboBoxRenderer {
 	@Override
 	public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-		if (value instanceof Hoster) {
-			Hoster hoster = (Hoster)value;
+		if (value instanceof Hoster hoster) {
 			setText(hoster.getDisplayName());
 
 			String displayIcon = hoster.getDisplayIcon();
