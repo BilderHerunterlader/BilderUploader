@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hoster name="ImageVenue-Adult" version="0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+<hoster name="ImageVenue-Adult" version="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
 	<displayName>ImageVenue (Adult)</displayName>
 	<displayIcon>imagevenue.ico</displayIcon>
-	<homePage>http://www.imagevenue.com</homePage>
+	<homePage>https://www.imagevenue.com</homePage>
 
 	<maxFileSize>6000000</maxFileSize>
 	<fileNameFilter>(?i)\.(?:jpg|jpeg)$</fileNameFilter>
@@ -10,7 +10,7 @@
 	<maxConnections>5</maxConnections>
 
 	<prepareUploadStep>
-		<url>http://www.imagevenue.com/</url>
+		<url>https://www.imagevenue.com/</url>
 		<regex>
 			<pattern>&lt;meta name=&quot;csrf-token&quot; content=&quot;(.+?)&quot;</pattern>
 			<replacementVariable variableName="CSRFToken" replacement="$1" />
@@ -18,7 +18,7 @@
 	</prepareUploadStep>
 
 	<prepareUploadStep>
-		<url>http://www.imagevenue.com/upload/session</url>
+		<url>https://www.imagevenue.com/upload/session</url>
 		<httpMethod>POST</httpMethod>
 		<additionalField fieldName="thumbnail_size" fieldValue="2" />
 		<additionalField fieldName="content_type" fieldValue="nsfw" />
@@ -35,7 +35,7 @@
 	</prepareUploadStep>
 
 	<uploadStep>
-		<url>http://www.imagevenue.com/upload</url>
+		<url>https://www.imagevenue.com/upload</url>
 		<fieldName>files[0]</fieldName>
 		<additionalField fieldName="data" fieldValue="${UploadData}" />
 		<additionalField fieldName="_token" fieldValue="${CSRFToken}" />
@@ -45,7 +45,7 @@
 	</uploadStep>
 	
 	<prepareResultStep>
-		<url>http://www.imagevenue.com/upload/complete?session=${UploadSessionID}</url>
+		<url>https://www.imagevenue.com/upload/complete?session=${UploadSessionID}</url>
 	</prepareResultStep>
 	
 	<uploadResultStep>

@@ -112,6 +112,8 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 */
 	public FileUploadResult uploadFile(Hoster hoster, File file, long fileSize, UploadProgressListener listener) throws IOException {
 		BasicCookieStore cookieStore = new BasicCookieStore();
+		HttpClientContext context = HttpClientContext.create();
+		context.setCookieStore(cookieStore);
 		try (CloseableHttpClient client = proxyManager.getHTTPClientBuilder().setDefaultCookieStore(cookieStore).build()) {
 			listener.statusChanged(UploadFileState.UPLOADING);
 			HosterSettings hosterSettings = settingsManager.getHosterSettings(hoster.getName());
@@ -145,7 +147,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			List<String> prepareUploadResultTexts = new ArrayList<>();
 			for (PrepareUploadStep prepareUploadStep : hoster.getPrepareUploadStep()) {
-				prepareUpload(prepareUploadStep, dymanicVariables, prepareUploadResultTexts, client, cookieStore, listener);
+				prepareUpload(prepareUploadStep, dymanicVariables, prepareUploadResultTexts, client, context, cookieStore, listener);
 			}
 
 			logger.info("Dynamic Variables after Prepare Upload: {}", dymanicVariables);
@@ -161,7 +163,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			logger.info("Upload Step: URL: {}, FileFieldName: {}, Filename: {}", uploadURL, fileFieldName, preparedFilename);
 
-			ContainerPage uploadContainerPage = executeHTTPPostRequest(uploadURL, fileFieldName, file, preparedFilename, uploadFields, additionalHeaders, listener, client);
+			ContainerPage uploadContainerPage = executeHTTPPostRequest(uploadURL, fileFieldName, file, preparedFilename, uploadFields, additionalHeaders, listener, client, context);
 			if (uploadContainerPage.isSuccess()) {
 				logger.info("Container-Page for Upload Step: URL={}: {}", uploadURL, uploadContainerPage);
 				checkForFailure(uploadStep.getFailureRegex(), uploadContainerPage, listener);
@@ -175,7 +177,7 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 
 			ContainerPage prepareResultContainerPage = null;
 			for (PrepareResultStep prepareResultStep : hoster.getPrepareResultStep()) {
-				prepareResultContainerPage = prepareResult(prepareResultStep, dymanicVariables, client, listener);
+				prepareResultContainerPage = prepareResult(prepareResultStep, dymanicVariables, client, context, listener);
 			}
 
 			logger.info("Dynamic Variables after Prepare Result: {}", dymanicVariables);
@@ -198,8 +200,8 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		}
 	}
 
-	private void prepareUpload(PrepareUploadStep prepareUploadStep, Map<String, String> dymanicVariables, List<String> prepareUploadResultTexts, CloseableHttpClient client, CookieStore cookieStore,
-			UploadProgressListener listener) throws IOException {
+	private void prepareUpload(PrepareUploadStep prepareUploadStep, Map<String, String> dymanicVariables, List<String> prepareUploadResultTexts, CloseableHttpClient client, HttpClientContext context,
+			CookieStore cookieStore, UploadProgressListener listener) throws IOException {
 		String prepareUploadURL = StringSubstitutor.replace(prepareUploadStep.getUrl(), dymanicVariables);
 		HTTPMethod httpMethod = prepareUploadStep.getHttpMethod();
 		logger.info("Prepare Upload Step: URL: {}, HTTP-Method: {}", prepareUploadURL, httpMethod);
@@ -208,9 +210,9 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		if (httpMethod == HTTPMethod.POST) {
 			Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareUploadStep.getAdditionalField(), dymanicVariables);
 			boolean multiPart = prepareUploadStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
-			prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, additionalHeaders, client);
+			prepareUploadContainerPage = executeHTTPPostRequest(prepareUploadURL, multiPart, prepareUploadFields, additionalHeaders, client, context);
 		} else {
-			prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, additionalHeaders, client);
+			prepareUploadContainerPage = executeHTTPGetRequest(prepareUploadURL, additionalHeaders, client, context);
 		}
 
 		if (prepareUploadContainerPage.isSuccess()) {
@@ -228,7 +230,8 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		}
 	}
 
-	private ContainerPage prepareResult(PrepareResultStep prepareResultStep, Map<String, String> dymanicVariables, CloseableHttpClient client, UploadProgressListener listener) throws IOException {
+	private ContainerPage prepareResult(PrepareResultStep prepareResultStep, Map<String, String> dymanicVariables, CloseableHttpClient client, HttpClientContext context,
+			UploadProgressListener listener) throws IOException {
 		String prepareResultURL = StringSubstitutor.replace(prepareResultStep.getUrl(), dymanicVariables);
 		HTTPMethod httpMethod = prepareResultStep.getHttpMethod();
 		logger.info("Prepare Result Step: URL: {}, HTTP-Method: {}", prepareResultURL, httpMethod);
@@ -237,9 +240,9 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 		if (httpMethod == HTTPMethod.POST) {
 			Map<String, String> prepareUploadFields = prepareAdditionalFields(prepareResultStep.getAdditionalField(), dymanicVariables);
 			boolean multiPart = prepareResultStep.getFormContentType() == FormContentType.MULTI_PART_FORM_DATA;
-			prepareResultContainerPage = executeHTTPPostRequest(prepareResultURL, multiPart, prepareUploadFields, additionalHeaders, client);
+			prepareResultContainerPage = executeHTTPPostRequest(prepareResultURL, multiPart, prepareUploadFields, additionalHeaders, client, context);
 		} else {
-			prepareResultContainerPage = executeHTTPGetRequest(prepareResultURL, additionalHeaders, client);
+			prepareResultContainerPage = executeHTTPGetRequest(prepareResultURL, additionalHeaders, client, context);
 		}
 
 		if (prepareResultContainerPage.isSuccess()) {
@@ -452,24 +455,23 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param url URL
 	 * @param additionalHeaders Additional Headers
 	 * @param client HTTP Client
+	 * @param context HTTP Context
 	 * @return Container Page
 	 * @throws IOException
 	 */
 	@SuppressWarnings("resource")
-	public ContainerPage executeHTTPGetRequest(String url, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
+	public ContainerPage executeHTTPGetRequest(String url, Map<String, String> additionalHeaders, CloseableHttpClient client, HttpClientContext context) throws IOException {
 		url = HTTPUtil.encodeURL(url);
 		HttpGet method = new HttpGet(url);
 
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, settingsManager.getConnectionSettings().getUserAgent());
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
 		}
-
-		HttpClientContext context = HttpClientContext.create();
 
 		return client.execute(method, context, response -> {
 			StatusLine statusLine = new StatusLine(response);
@@ -501,18 +503,20 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param fields Fields
 	 * @param additionalHeaders Additional Headers
 	 * @param client HTTP Client
+	 * @param context HTTP Context
 	 * @return Container Page
 	 * @throws IOException
 	 */
 	@SuppressWarnings("resource")
-	public ContainerPage executeHTTPPostRequest(String url, boolean multiPart, Map<String, String> fields, Map<String, String> additionalHeaders, CloseableHttpClient client) throws IOException {
+	public ContainerPage executeHTTPPostRequest(String url, boolean multiPart, Map<String, String> fields, Map<String, String> additionalHeaders, CloseableHttpClient client,
+			HttpClientContext context) throws IOException {
 		url = HTTPUtil.encodeURL(url);
 		HttpPost method = new HttpPost(url);
 
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, settingsManager.getConnectionSettings().getUserAgent());
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
@@ -532,8 +536,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 			}
 			method.setEntity(new UrlEncodedFormEntity(params));
 		}
-
-		HttpClientContext context = HttpClientContext.create();
 
 		return client.execute(method, context, response -> {
 			StatusLine statusLine = new StatusLine(response);
@@ -568,19 +570,20 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 	 * @param additionalHeaders Additional Headers
 	 * @param listener Listener or null
 	 * @param client HTTP Client
+	 * @param context HTTP Context
 	 * @return Container Page
 	 * @throws IOException
 	 */
 	@SuppressWarnings("resource")
 	public ContainerPage executeHTTPPostRequest(String url, String fileFieldName, File file, String fileName, Map<String, String> fields, Map<String, String> additionalHeaders,
-			UploadProgressListener listener, CloseableHttpClient client) throws IOException {
+			UploadProgressListener listener, CloseableHttpClient client, HttpClientContext context) throws IOException {
 		url = HTTPUtil.encodeURL(url);
 		HttpPost method = new HttpPost(url);
 
 		RequestConfig.Builder requestConfigBuilder = proxyManager.getDefaultRequestConfigBuilder();
 		requestConfigBuilder.setMaxRedirects(10);
 		method.setConfig(requestConfigBuilder.build());
-		method.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.9) Gecko/20100101 Goanna/4.1 Firefox/52.9 PaleMoon/28.0.0.1");
+		method.setHeader(HttpHeaders.USER_AGENT, settingsManager.getConnectionSettings().getUserAgent());
 
 		for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
 			method.setHeader(entry.getKey(), entry.getValue());
@@ -601,7 +604,6 @@ public class UploadManager implements QueueTaskFactory<UploadFile, FileUploadRes
 				method.setEntity(multipart);
 			}
 
-			HttpClientContext context = HttpClientContext.create();
 			return client.execute(method, context, response -> {
 				StatusLine statusLine = new StatusLine(response);
 				int statusCode = statusLine.getStatusCode();

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hoster name="ImageVenue-Family" version="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
-	<displayName>ImageVenue (Family safe)</displayName>
-	<displayIcon>imagevenue.ico</displayIcon>
+<hoster name="ImageVenue-Account" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+	<displayName>ImageVenue (Account)</displayName>
+	<displayIcon>imagebam.ico</displayIcon>
 	<homePage>https://www.imagevenue.com</homePage>
 
 	<maxFileSize>6000000</maxFileSize>
 	<fileNameFilter>(?i)\.(?:jpg|jpeg)$</fileNameFilter>
 	
-	<maxConnections>5</maxConnections>
+	<maxConnections>6</maxConnections>
 
 	<prepareUploadStep>
 		<url>https://www.imagevenue.com/</url>
@@ -17,6 +17,25 @@
 		</regex>
 	</prepareUploadStep>
 
+	<prepareUploadStep>
+		<url>https://www.imagevenue.com/auth/login</url>
+		<httpMethod>POST</httpMethod>
+		<additionalField fieldName="_token" fieldValue="${CSRFToken}" />
+		<additionalField fieldName="email" fieldValue="${Username}" />
+		<additionalField fieldName="password" fieldValue="${Password}" />
+		<failureRegex>
+			<pattern>The Username and Password do not match</pattern>
+		</failureRegex>
+	</prepareUploadStep>
+	
+	<prepareUploadStep>
+		<url>https://www.imagebam.com/</url>
+		<regex>
+			<pattern>&lt;meta name=&quot;csrf-token&quot; content=&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="CSRFToken" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+	
 	<prepareUploadStep>
 		<url>https://www.imagevenue.com/upload/session</url>
 		<httpMethod>POST</httpMethod>
@@ -33,7 +52,7 @@
 			<replacementVariable variableName="UploadSessionID" replacement="$1" />
 		</regex>
 	</prepareUploadStep>
-
+	
 	<uploadStep>
 		<url>https://www.imagevenue.com/upload</url>
 		<fieldName>files[0]</fieldName>
@@ -54,4 +73,7 @@
 			<replacement>$1</replacement>
 		</regex>
 	</uploadResultStep>
+	
+	<passwordVariable variableName="Username" />
+	<passwordVariable variableName="Password" encrypted="true" />
 </hoster>

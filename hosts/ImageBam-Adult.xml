@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hoster name="ImageVenue-Family" version="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
-	<displayName>ImageVenue (Family safe)</displayName>
-	<displayIcon>imagevenue.ico</displayIcon>
-	<homePage>https://www.imagevenue.com</homePage>
+<hoster name="ImageBam-Adult" version="0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
+	<displayName>ImageBam (Adult)</displayName>
+	<displayIcon>imagebam.ico</displayIcon>
+	<homePage>https://www.imagebam.com</homePage>
 
-	<maxFileSize>6000000</maxFileSize>
-	<fileNameFilter>(?i)\.(?:jpg|jpeg)$</fileNameFilter>
+	<maxFileSize>10485760</maxFileSize>
+	<fileNameFilter>(?i)\.(?:jpg|jpeg|png|gif)$</fileNameFilter>
 	
-	<maxConnections>5</maxConnections>
-
+	<maxConnections>6</maxConnections>
+	
 	<prepareUploadStep>
-		<url>https://www.imagevenue.com/</url>
+		<url>https://www.imagebam.com/</url>
 		<regex>
 			<pattern>&lt;meta name=&quot;csrf-token&quot; content=&quot;(.+?)&quot;</pattern>
 			<replacementVariable variableName="CSRFToken" replacement="$1" />
 		</regex>
 	</prepareUploadStep>
-
+	
 	<prepareUploadStep>
-		<url>https://www.imagevenue.com/upload/session</url>
+		<url>https://www.imagebam.com/upload/session</url>
 		<httpMethod>POST</httpMethod>
 		<additionalField fieldName="thumbnail_size" fieldValue="2" />
-		<additionalField fieldName="content_type" fieldValue="sfw" />
+		<additionalField fieldName="content_type" fieldValue="nsfw" />
 		<additionalField fieldName="comments_enabled" fieldValue="false" />
 		<additionalHeader headerName="X-CSRF-TOKEN" headerValue="${CSRFToken}" />
 		<regex>
@@ -33,19 +33,23 @@
 			<replacementVariable variableName="UploadSessionID" replacement="$1" />
 		</regex>
 	</prepareUploadStep>
-
+	
 	<uploadStep>
-		<url>https://www.imagevenue.com/upload</url>
+		<url>https://www.imagebam.com/upload</url>
 		<fieldName>files[0]</fieldName>
 		<additionalField fieldName="data" fieldValue="${UploadData}" />
 		<additionalField fieldName="_token" fieldValue="${CSRFToken}" />
 		<failureRegex>
 			<pattern>There was an error uploading the files</pattern>
 		</failureRegex>
+		<filenameRegex>
+			<pattern>^(.{0,95}).*?(\.[^.]+)?$</pattern>
+			<replacement>$1$2</replacement>
+		</filenameRegex>
 	</uploadStep>
 	
 	<prepareResultStep>
-		<url>https://www.imagevenue.com/upload/complete?session=${UploadSessionID}</url>
+		<url>https://www.imagebam.com/upload/complete?session=${UploadSessionID}</url>
 	</prepareResultStep>
 	
 	<uploadResultStep>

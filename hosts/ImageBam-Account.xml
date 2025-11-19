@@ -2,7 +2,7 @@
 <hoster name="ImageBam-Account" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.w3schools.com hoster.xsd">
 	<displayName>ImageBam (Account)</displayName>
 	<displayIcon>imagebam.ico</displayIcon>
-	<homePage>http://www.imagebam.com</homePage>
+	<homePage>https://www.imagebam.com</homePage>
 
 	<maxFileSize>10485760</maxFileSize>
 	<fileNameFilter>(?i)\.(?:jpg|jpeg|png|gif)$</fileNameFilter>
@@ -10,37 +10,70 @@
 	<maxConnections>6</maxConnections>
 
 	<prepareUploadStep>
-		<url>http://www.imagebam.com/login</url>
+		<url>https://www.imagebam.com/</url>
+		<regex>
+			<pattern>&lt;meta name=&quot;csrf-token&quot; content=&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="CSRFToken" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+
+	<prepareUploadStep>
+		<url>https://www.imagebam.com/auth/login</url>
 		<httpMethod>POST</httpMethod>
-		<additionalField fieldName="action" fieldValue="true" />
-		<additionalField fieldName="nick" fieldValue="${Username}" />
-		<additionalField fieldName="pw" fieldValue="${Password}" />
+		<additionalField fieldName="_token" fieldValue="${CSRFToken}" />
+		<additionalField fieldName="email" fieldValue="${Username}" />
+		<additionalField fieldName="password" fieldValue="${Password}" />
 		<failureRegex>
 			<pattern>The Username and Password do not match</pattern>
 		</failureRegex>
 	</prepareUploadStep>
-
+	
+	<prepareUploadStep>
+		<url>https://www.imagebam.com/</url>
+		<regex>
+			<pattern>&lt;meta name=&quot;csrf-token&quot; content=&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="CSRFToken" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+	
+	<prepareUploadStep>
+		<url>https://www.imagebam.com/upload/session</url>
+		<httpMethod>POST</httpMethod>
+		<additionalField fieldName="thumbnail_size" fieldValue="2" />
+		<additionalField fieldName="content_type" fieldValue="sfw" />
+		<additionalField fieldName="comments_enabled" fieldValue="false" />
+		<additionalHeader headerName="X-CSRF-TOKEN" headerValue="${CSRFToken}" />
+		<regex>
+			<pattern>&quot;data&quot;:&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="UploadData" replacement="$1" />
+		</regex>
+		<regex>
+			<pattern>&quot;session&quot;:&quot;(.+?)&quot;</pattern>
+			<replacementVariable variableName="UploadSessionID" replacement="$1" />
+		</regex>
+	</prepareUploadStep>
+	
 	<uploadStep>
-		<url>http://www.imagebam.com/sys/upload/save</url>
-		<fieldName>file[]</fieldName>
-		<additionalField fieldName="content_type" fieldValue="0" />
-		<additionalField fieldName="thumb_size" fieldValue="180" />
-		<additionalField fieldName="thumb_aspect_ratio" fieldValue="resize" />
-		<additionalField fieldName="thumb_file_type" fieldValue="jpg" />
-		<additionalField fieldName="thumb_info" fieldValue="0" />
-		<additionalField fieldName="gallery_options" fieldValue="0" />
+		<url>https://www.imagebam.com/upload</url>
+		<fieldName>files[0]</fieldName>
+		<additionalField fieldName="data" fieldValue="${UploadData}" />
+		<additionalField fieldName="_token" fieldValue="${CSRFToken}" />
 		<failureRegex>
-			<pattern>(?s)&lt;h1&gt;An Error Was Encountered&lt;/h1&gt;.+?&lt;p&gt;Error.+?&lt;/p&gt;.+?&lt;/div&gt;</pattern>
+			<pattern>There was an error uploading the files</pattern>
 		</failureRegex>
 		<filenameRegex>
-			<pattern>^(.{0,95}).+?(\.[^.]+)?$</pattern>
+			<pattern>^(.{0,95}).*?(\.[^.]+)?$</pattern>
 			<replacement>$1$2</replacement>
 		</filenameRegex>
 	</uploadStep>
 	
+	<prepareResultStep>
+		<url>https://www.imagebam.com/upload/complete?session=${UploadSessionID}</url>
+	</prepareResultStep>
+	
 	<uploadResultStep>
 		<regex>
-			<pattern>(?ism)&lt;textarea onClick=&quot;this\.select\(\);&quot;.*?&gt;(\[URL=http://www\.imagebam\.com/image/[^\]]+\]\[IMG\]http://[^\[]+\[/IMG\]\[/URL\])</pattern>
+			<pattern>(?ism)(\[URL=[^\]]+\]\[IMG\][^\[]+\[/IMG\]\[/URL\])</pattern>
 			<replacement>$1</replacement>
 		</regex>
 	</uploadResultStep>
