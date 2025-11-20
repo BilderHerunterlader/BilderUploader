@@ -80,17 +80,17 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	/**
 	 * Button
 	 */
-	private JButton btnStart = new JButton(Localization.getString("Start"), Icons.getTangoIcon("actions/media-playback-start.png", 16));
+	private JButton btnStart = new JButton(Localization.getString("Start"), Icons.getTangoSVGIcon("actions/media-playback-start.svg", 16));
 
 	/**
 	 * Button
 	 */
-	private JButton btnStop = new JButton(Localization.getString("Stop"), Icons.getTangoIcon("actions/media-playback-stop.png", 16));
+	private JButton btnStop = new JButton(Localization.getString("Stop"), Icons.getTangoSVGIcon("actions/media-playback-stop.svg", 16));
 
 	/**
 	 * Button
 	 */
-	private JButton btnGenerateTemplate = new JButton(Localization.getString("GenerateCode"), Icons.getTangoIcon("mimetypes/text-html.png", 16));
+	private JButton btnGenerateTemplate = new JButton(Localization.getString("GenerateCode"), Icons.getTangoSVGIcon("mimetypes/text-html.svg", 16));
 
 	/**
 	 * Panel
@@ -110,32 +110,32 @@ public class QueuePanel extends JPanel implements QueueManagerListener, UploadQu
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemReset = new JMenuItem(Localization.getString("Reset"), Icons.getTangoIcon("actions/edit-undo.png", 16));
+	private JMenuItem menuItemReset = new JMenuItem(Localization.getString("Reset"), Icons.getTangoSVGIcon("actions/edit-undo.svg", 16));
 
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemCopy = new JMenuItem(Localization.getString("Copy"), Icons.getTangoIcon("actions/edit-copy.png", 16));
+	private JMenuItem menuItemCopy = new JMenuItem(Localization.getString("Copy"), Icons.getTangoSVGIcon("actions/edit-copy.svg", 16));
 
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemChangeHoster = new JMenuItem(Localization.getString("ChangeHoster"), Icons.getTangoIcon("places/network-server.png", 16));
+	private JMenuItem menuItemChangeHoster = new JMenuItem(Localization.getString("ChangeHoster"), Icons.getTangoSVGIcon("places/network-server.svg", 16));
 
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemDelete = new JMenuItem(Localization.getString("Delete"), Icons.getTangoIcon("actions/edit-delete.png", 16));
+	private JMenuItem menuItemDelete = new JMenuItem(Localization.getString("Delete"), Icons.getTangoSVGIcon("actions/edit-delete.svg", 16));
 
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemActivate = new JMenuItem(Localization.getString("Activate"), Icons.getTangoIcon("actions/media-record.png", 16));
+	private JMenuItem menuItemActivate = new JMenuItem(Localization.getString("Activate"), Icons.getTangoSVGIcon("actions/media-record.svg", 16));
 
 	/**
 	 * MenuItem
 	 */
-	private JMenuItem menuItemDeactivate = new JMenuItem(Localization.getString("Deactivate"), Icons.getTangoIcon("emblems/emblem-readonly.png", 16));
+	private JMenuItem menuItemDeactivate = new JMenuItem(Localization.getString("Deactivate"), Icons.getTangoSVGIcon("emblems/emblem-readonly.svg", 16));
 
 	/**
 	 * Scrollpane

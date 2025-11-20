@@ -22,24 +22,4 @@ public class BUUtil {
 		loggerConfig.setLevel(level);
 		loggerContext.updateLoggers(config);
 	}
-
-	/**
-	 * This method filters not allowed chars in paths or filenames
-	 * You must set noPath to true, if the string is only a filename.
-	 * 
-	 * @param str String
-	 * @param noPath Is no path
-	 * @return Corrected String
-	 */
-	public static String correctFileString(String str, boolean noPath) {
-		String result = str;
-
-		if (noPath) {
-			// if the String is not a path we filter more chars
-			result = result.replaceAll("[\"*<>?|/:\\\\]", "");
-		} else {
-			result = result.replaceAll("[\"*<>?|]", "");
-		}
-		return result;
-	}
 }

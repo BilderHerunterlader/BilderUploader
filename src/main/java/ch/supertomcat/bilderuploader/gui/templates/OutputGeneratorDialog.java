@@ -55,7 +55,6 @@ import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParse
 import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParserContainer;
 import ch.supertomcat.bilderuploader.templates.filenameparser.TitleFilenameParserManager;
 import ch.supertomcat.bilderuploader.upload.UploadFile;
-import ch.supertomcat.bilderuploader.util.BUUtil;
 import ch.supertomcat.supertomcatutils.application.ApplicationMain;
 import ch.supertomcat.supertomcatutils.application.ApplicationProperties;
 import ch.supertomcat.supertomcatutils.clipboard.ClipboardUtil;
@@ -514,7 +513,7 @@ public class OutputGeneratorDialog extends JDialog {
 		String formattedDate = now.format(DATE_FORMAT_FILENAME);
 
 		String fileName = postType + "-" + formattedDate + "-" + postTitle + ".txt";
-		fileName = BUUtil.correctFileString(fileName, true);
+		fileName = FileUtil.filterFilename(fileName, FileUtil.FILENAME_ALL);
 
 		String formattedDateFolder = now.format(DATE_FORMAT_FOLDER);
 

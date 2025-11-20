@@ -140,9 +140,9 @@ public class MainWindow extends JFrame {
 		TemplatesPanel templatesPanel = new TemplatesPanel(templateManager, settingsManager);
 
 		tabs.setFocusable(false);
-		tabs.addTab(Localization.getString("Queue"), Icons.getTangoIcon("actions/go-up.png", 22), queue);
-		tabs.addTab(Localization.getString("Hoster"), Icons.getTangoIcon("places/network-server.png", 22), hosterPanel);
-		tabs.addTab(Localization.getString("Templates"), Icons.getTangoIcon("mimetypes/x-office-document-template.png", 22), templatesPanel);
+		tabs.addTab(Localization.getString("Queue"), Icons.getTangoSVGIcon("actions/go-up.svg", 22), queue);
+		tabs.addTab(Localization.getString("Hoster"), Icons.getTangoSVGIcon("places/network-server.svg", 22), hosterPanel);
+		tabs.addTab(Localization.getString("Templates"), Icons.getTangoSVGIcon("mimetypes/x-office-document-template.svg", 22), templatesPanel);
 
 		tabs.addChangeListener(new ChangeListener() {
 
@@ -384,7 +384,7 @@ public class MainWindow extends JFrame {
 	 */
 	public synchronized void addProgressObserver(ProgressObserver progress) {
 		mainProgressPopup.addProgressObserver(progress);
-		lblProgress.setIcon(Icons.getApplIcon("animations/process-working.gif", 16));
+		lblProgress.setIcon(Icons.getApplSVGIcon("animations/process-working.svg", 16));
 	}
 
 	/**

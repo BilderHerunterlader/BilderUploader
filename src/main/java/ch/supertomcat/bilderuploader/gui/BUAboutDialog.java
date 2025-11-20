@@ -33,7 +33,7 @@ public class BUAboutDialog extends AboutDialog {
 	protected void configureComponents() {
 		super.configureComponents();
 
-		JButton btnWebsite = new JButton(Localization.getString("Website"), Icons.getTangoIcon("apps/internet-web-browser.png", 16));
+		JButton btnWebsite = new JButton(Localization.getString("Website"), Icons.getTangoSVGIcon("apps/internet-web-browser.svg", 16));
 		pnlButtons.add(btnWebsite);
 		btnWebsite.addActionListener(e -> openURL(ApplicationProperties.getProperty("WebsiteURL")));
 	}

@@ -307,12 +307,12 @@ public class SettingsDialog extends JDialog {
 	/**
 	 * Button
 	 */
-	private JButton btnMaxFailedCountPlus = new JButton("", Icons.getTangoIcon("actions/list-add.png", 16));
+	private JButton btnMaxFailedCountPlus = new JButton("", Icons.getTangoSVGIcon("actions/list-add.svg", 16));
 
 	/**
 	 * Button
 	 */
-	private JButton btnMaxFailedCountMinus = new JButton("", Icons.getTangoIcon("actions/list-remove.png", 16));
+	private JButton btnMaxFailedCountMinus = new JButton("", Icons.getTangoSVGIcon("actions/list-remove.svg", 16));
 
 	/**
 	 * Label
@@ -407,17 +407,17 @@ public class SettingsDialog extends JDialog {
 	/**
 	 * Button
 	 */
-	private JButton btnSave = new JButton(Localization.getString("SaveAndApply"), Icons.getTangoIcon("actions/document-save.png", 16));
+	private JButton btnSave = new JButton(Localization.getString("SaveAndApply"), Icons.getTangoSVGIcon("actions/document-save.svg", 16));
 
 	/**
 	 * Button
 	 */
-	private JButton btnReset = new JButton(Localization.getString("Reset"), Icons.getTangoIcon("actions/edit-undo.png", 16));
+	private JButton btnReset = new JButton(Localization.getString("Reset"), Icons.getTangoSVGIcon("actions/edit-undo.svg", 16));
 
 	/**
 	 * Button
 	 */
-	private JButton btnCancel = new JButton(Localization.getString("Cancel"), Icons.getTangoIcon("emblems/emblem-unreadable.png", 16));
+	private JButton btnCancel = new JButton(Localization.getString("Cancel"), Icons.getTangoSVGIcon("emblems/emblem-unreadable.svg", 16));
 
 	/**
 	 * GridBagLayout
@@ -585,10 +585,10 @@ public class SettingsDialog extends JDialog {
 
 		tp.setFocusable(false);
 		tp.setTabPlacement(JTabbedPane.TOP);
-		tp.addTab(Localization.getString("SettingsGUI"), Icons.getTangoIcon("apps/preferences-system-windows.png", 22), spGUI);
-		tp.addTab(Localization.getString("SettingsConnection"), Icons.getTangoIcon("status/network-idle.png", 22), spConnection);
-		tp.addTab(Localization.getString("SettingsUpload"), Icons.getTangoIcon("actions/go-down.png", 22), spUpload);
-		tp.addTab(Localization.getString("SettingsOther"), Icons.getTangoIcon("categories/preferences-system.png", 22), spOther);
+		tp.addTab(Localization.getString("SettingsGUI"), Icons.getTangoSVGIcon("apps/preferences-system-windows.svg", 22), spGUI);
+		tp.addTab(Localization.getString("SettingsConnection"), Icons.getTangoSVGIcon("status/network-idle.svg", 22), spConnection);
+		tp.addTab(Localization.getString("SettingsUpload"), Icons.getTangoSVGIcon("actions/go-down.svg", 22), spUpload);
+		tp.addTab(Localization.getString("SettingsOther"), Icons.getTangoSVGIcon("categories/preferences-system.svg", 22), spOther);
 
 		buttonGroup.add(rbNoProxy);
 		buttonGroup.add(rbHTTP);

@@ -2,7 +2,7 @@
 Program for uploading files to file hosts
 
 # Requirements
-Java 11 is required.
+Java 21 is required.
 
 # License
 This project is licensed under the GNU General Public License version 3 (or later).
