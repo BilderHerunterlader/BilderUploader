@@ -62,7 +62,7 @@ public class ConnectionSettings {
     protected int connectionRequestTimeout;
     @XmlElement(required = true)
     protected ProxySettings proxy;
-    @XmlElement(required = true, defaultValue = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:60.9) Gecko/20100101 Goanna/4.2 Firefox/60.9 PaleMoon/28.5.0")
+    @XmlElement(required = true, defaultValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:6.8) Goanna/20260403 PaleMoon/34.2.0")
     protected String userAgent;
 
     /**

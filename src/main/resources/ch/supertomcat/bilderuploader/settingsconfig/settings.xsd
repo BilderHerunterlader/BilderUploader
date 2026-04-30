@@ -59,7 +59,7 @@
 			<xs:element name="socketTimeout" type="xs:int" default="60000" />
 			<xs:element name="connectionRequestTimeout" type="xs:int" default="60000" />
 			<xs:element name="proxy" type="ProxySettings" />
-			<xs:element name="userAgent" type="xs:string" default="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:60.9) Gecko/20100101 Goanna/4.2 Firefox/60.9 PaleMoon/28.5.0" />
+			<xs:element name="userAgent" type="xs:string" default="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:6.8) Goanna/20260403 PaleMoon/34.2.0" />
 		</xs:sequence>
 	</xs:complexType>
 
